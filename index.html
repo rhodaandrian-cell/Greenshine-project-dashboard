@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Greenshine Academy • Finance Dashboard</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo-mark" aria-hidden="true"></div>
+      <div class="brand-text">
+        <h1>Greenshine Academy</h1>
+        <p>Finance Dashboard • Installments • Receipts • Statements</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="status-pill">
+        <span class="dot"></span>
+        <span id="statusText">Ready</span>
+      </div>
+      <button id="btnSyncNow" class="btn btn-primary" type="button">Sync Now</button>
+      <button id="btnExportPayments" class="btn" type="button">Export Payments PDF</button>
+      <button id="btnClearSeen" class="btn btn-ghost" type="button">Reset Receipt Popups</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="meta-strip">
+      <div class="meta-card"><div class="meta-title">Students</div><div class="meta-value" id="studentsCount">0</div></div>
+      <div class="meta-card"><div class="meta-title">Payments (Receipts)</div><div class="meta-value" id="paymentsCount">0</div></div>
+      <div class="meta-card"><div class="meta-title">Last Sync</div><div class="meta-value" id="lastSync">—</div></div>
+      <div class="meta-card"><div class="meta-title">Current Term</div><div class="meta-value"><span class="badge">TERM 1</span></div></div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Filters</h2>
+        <p>Grades: 0–6 • Terms: 1–3 • Defaults to Term 1</p>
+      </div>
+      <div class="row">
+        <div class="field"><label for="filterGrade">Filter by Grade</label><select id="filterGrade" name="filterGrade"><option value="">All Grades</option></select></div>
+        <div class="field"><label for="filterTerm">Filter by Term</label><select id="filterTerm" name="filterTerm"><option value="">All Terms</option></select></div>
+        <div class="field"><label for="filterActions">Apply</label><div id="filterActions" class="row-inline"><button id="btnApplyFilters" class="btn" type="button">Apply</button><button id="btnResetFilters" class="btn btn-ghost" type="button">Reset</button></div></div>
+        <div class="field"><label for="receiptSearch">Search receipts</label><input id="receiptSearch" name="receiptSearch" type="text" placeholder="receipt / student / reference" autocomplete="off" /></div>
+      </div>
+    </section>
+
+    <section class="kpi-grid">
+      <article class="kpi"><div class="kpi-label">Expected</div><div class="kpi-value" id="kpiExpected">KES 0.00</div><div class="kpi-sub">Total fees due (filtered)</div></article>
+      <article class="kpi"><div class="kpi-label">Collected</div><div class="kpi-value" id="kpiCollected">KES 0.00</div><div class="kpi-sub">Baseline + installments (filtered)</div></article>
+      <article class="kpi"><div class="kpi-label">Outstanding</div><div class="kpi-value" id="kpiOutstanding">KES 0.00</div><div class="kpi-sub">Only underpaid balances</div></article>
+      <article class="kpi"><div class="kpi-label">Collection Rate</div><div class="kpi-value" id="kpiRate">0.0%</div><div class="kpi-sub">Collected ÷ expected</div></article>
+    </section>
+
+    <section class="meta-strip">
+      <div class="meta-card"><div class="meta-title">Underpaid Students</div><div class="meta-value" id="countUnder">0</div></div>
+      <div class="meta-card"><div class="meta-title">Fully Paid Students</div><div class="meta-value" id="countFull">0</div></div>
+      <div class="meta-card"><div class="meta-title">Overpaid Students</div><div class="meta-value" id="countOver">0</div></div>
+      <div class="meta-card"><div class="meta-title">New Receipts Today</div><div class="meta-value" id="countToday">0</div></div>
+    </section>
+
+    <section class="grid-2">
+      <section class="card"><div class="card-header"><h2>By Grade (Bar)</h2><p>Expected vs Collected vs Outstanding</p></div><canvas id="chartGrade" height="120"></canvas></section>
+      <section class="card"><div class="card-header"><h2>By Term (Bar)</h2><p>Expected vs Collected vs Outstanding</p></div><canvas id="chartTerm" height="120"></canvas></section>
+    </section>
+
+    <section class="grid-2">
+      <section class="card"><div class="card-header"><h2>Payment Status (Pie)</h2><p>Underpaid vs Fully Paid vs Overpaid</p></div><canvas id="chartPieStatus" height="120"></canvas></section>
+      <section class="card"><div class="card-header"><h2>Payment Methods (Pie)</h2><p>From receipts/installments sheet</p></div><canvas id="chartPieMethods" height="120"></canvas></section>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2>Today's Receipts (Front)</h2><p>Receipts recorded today (from Installments sheet). Download instantly.</p></div>
+      <div class="table-wrap"><table class="table" id="latestReceiptsTable"><thead><tr><th>Date</th><th>Receipt No.</th><th>Student</th><th>Grade</th><th>Term</th><th>Amount</th><th>Action</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2>Top Defaulters (Underpaid)</h2><p>Highest outstanding balances for selected filters.</p></div>
+      <div class="table-wrap"><table class="table" id="defaultersTable"><thead><tr><th>Student</th><th>Grade</th><th>Term</th><th>Fees</th><th>Collected</th><th>Outstanding</th><th>% Paid</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2>All Payments (Installments / Receipts)</h2><p>Each row is a receipt (from Installments sheet).</p></div>
+      <div class="table-wrap"><table class="table" id="paymentsTable"><thead><tr><th>Date</th><th>Receipt No.</th><th>Student</th><th>Grade</th><th>Term</th><th>Amount</th><th>Method</th><th>Reference</th><th>Received By</th><th>Action</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section class="card" id="studentStatementsCard">
+      <div class="card-header"><h2>Student Statements</h2><p>Total Paid = baseline TOTAL PAID (Students sheet) + receipts (Installments sheet) from 25 Feb 2026 onward.</p></div>
+      <div class="row-inline" style="padding: 0 16px 12px;"><button id="btnDownloadAllStatements" class="btn btn-primary" type="button">Download ALL statements (PDF)</button><small class="status" id="statementsHint">Tip: Use Grade/Term filters first, then download.</small></div>
+      <div class="table-wrap"><table class="table" id="studentStatementsTable"><thead><tr><th>Student</th><th>Grade</th><th>Term</th><th>Fees</th><th>Total Paid (Term)</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <footer class="footer"><div class="footer-inner"><span>© <span id="yearNow"></span> Greenshine Academy</span><span class="muted">Green • White • Brown • Black</span></div></footer>
+  </main>
+
+  <div id="receiptModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="receiptModalTitle">
+    <div class="modal-card">
+      <div class="modal-header"><h3 id="receiptModalTitle">Receipts</h3><button id="btnCloseReceiptModal" class="btn btn-ghost" type="button">Close</button></div>
+      <div class="modal-body">
+        <div id="receiptModalMeta" class="muted"></div>
+        <div class="table-wrap"><table class="table" id="receiptModalTable"><thead><tr><th>Date</th><th>Receipt No.</th><th>Amount</th><th>Method</th><th>Download</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+
+  <script src="animations.js"></script>
+  <script src="data.js"></script>
+  <script src="installments.js"></script>
+  <script src="dashboard.js"></script>
+
+  <script>document.getElementById("yearNow").textContent = new Date().getFullYear();</script>
+</body>
+</html>
