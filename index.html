@@ -26,6 +26,7 @@
       <button id="btnSyncNow" class="btn btn-primary" type="button">Sync Now</button>
       <button id="btnExportPayments" class="btn" type="button">Export Payments PDF</button>
       <button id="btnClearSeen" class="btn btn-ghost" type="button">Reset Receipt Popups</button>
+      <button id="btnRecordPayment" class="btn btn-primary" type="button">Record Payment</button>
     </div>
   </header>
 
@@ -121,4 +122,77 @@
 
   <script>document.getElementById("yearNow").textContent = new Date().getFullYear();</script>
 </body>
+<div id="paymentModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>Record Payment</h2>
+      <button id="btnClosePaymentModal" class="btn" type="button">Close</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="row" style="grid-template-columns: 1.4fr 1fr 1fr; gap:12px;">
+        <div class="field">
+          <label>Student Name</label>
+          <input id="payStudent" list="studentsDatalist" placeholder="Start typing name..." />
+          <datalist id="studentsDatalist"></datalist>
+          <div id="studentHint" class="muted" style="margin-top:6px;"></div>
+        </div>
+
+        <div class="field">
+          <label>Grade</label>
+          <input id="payGrade" type="number" placeholder="e.g. 5" />
+        </div>
+
+        <div class="field">
+          <label>Term</label>
+          <input id="payTerm" type="number" placeholder="e.g. 1" />
+        </div>
+      </div>
+
+      <div class="row" style="grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+        <div class="field">
+          <label>Amount Paid</label>
+          <input id="payAmount" type="number" placeholder="e.g. 3000" />
+        </div>
+
+        <div class="field">
+          <label>Payment Method</label>
+          <input id="payMethod" placeholder="MPESA / CASH" value="MPESA" />
+        </div>
+
+        <div class="field">
+          <label>Reference</label>
+          <input id="payRef" placeholder="Optional" />
+        </div>
+      </div>
+
+      <div class="row" style="grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="field">
+          <label>Received By</label>
+          <input id="payReceivedBy" placeholder="e.g. JADE" />
+        </div>
+
+        <div class="field">
+          <label>Date (optional)</label>
+          <input id="payDate" placeholder="Leave blank = today" />
+        </div>
+      </div>
+
+      <div class="row" style="grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="field">
+          <label>Receipt No. (optional)</label>
+          <input id="payReceiptNo" placeholder="Leave blank = auto" />
+        </div>
+
+        <div class="field" style="display:flex; align-items:flex-end; gap:10px;">
+          <button id="btnSavePayment" class="btn btn-primary" type="button" style="width:100%;">
+            Save Payment
+          </button>
+        </div>
+      </div>
+
+      <div id="payStatus" class="muted" style="padding: 0 16px 16px;"></div>
+    </div>
+  </div>
+</div>
 </html>

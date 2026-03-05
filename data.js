@@ -13,6 +13,8 @@
     TERMS: [1, 2, 3],
     SEEN_RECEIPTS_KEY: "greenshine_seen_receipts_v1",
     CUTOFF_DATE: "2026-02-25",
+
+    API_URL: "https://script.google.com/macros/s/AKfycbz53N8bmyGiVm89K46fzRiVLWqpYhhvGLPhj2I5c8uYK46RAnHOPctnpMYmvtsHNxIADQ/exec",
   };
 
   App.state = {

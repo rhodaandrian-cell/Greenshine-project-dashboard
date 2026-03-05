@@ -1,4 +1,4 @@
-// dashboard.js (safe + fixed)
+// dashboard.js (full version: safe + charts + receipts + statements + record-payment modal)
 document.addEventListener("DOMContentLoaded", () => {
   // ===== Hard guards =====
   const App = window.App;
@@ -59,12 +59,32 @@ document.addEventListener("DOMContentLoaded", () => {
     chartPieMethods: byId("chartPieMethods"),
   };
 
-  // Modal
+  // ===== Receipt Modal (existing) =====
   const receiptModal = byId("receiptModal");
   const btnCloseReceiptModal = byId("btnCloseReceiptModal");
   const receiptModalTitle = byId("receiptModalTitle");
   const receiptModalMeta = byId("receiptModalMeta");
   const receiptModalTbody = $("#receiptModalTable tbody");
+
+  // ===== Record Payment Modal (NEW) =====
+  const paymentModal = byId("paymentModal");
+  const btnRecordPayment = byId("btnRecordPayment");
+  const btnClosePaymentModal = byId("btnClosePaymentModal");
+
+  const payStudent = byId("payStudent");
+  const studentsDatalist = byId("studentsDatalist");
+  const studentHint = byId("studentHint");
+
+  const payDate = byId("payDate");
+  const payReceiptNo = byId("payReceiptNo");
+  const payAmount = byId("payAmount");
+  const payGrade = byId("payGrade");
+  const payTerm = byId("payTerm");
+  const payMethod = byId("payMethod");
+  const payRef = byId("payRef");
+  const payReceivedBy = byId("payReceivedBy");
+  const btnSavePayment = byId("btnSavePayment");
+  const payStatus = byId("payStatus");
 
   // Charts
   let gradeChart = null;
@@ -149,9 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ===== CHARTS =====
   function renderCharts(balanceRows) {
-    if (!hasChart) {
-      return;
-    }
+    if (!hasChart) return;
 
     if (els.chartGrade) {
       const byGrade = groupBy(balanceRows, (r) => String(r.grade));
@@ -330,14 +348,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ===== MODAL =====
+  // ===== RECEIPT MODAL =====
   function openReceiptsModal(student, grade, term) {
     if (!receiptModal || !receiptModalTbody || typeof App.getReceiptsForStudentTerm !== "function") return;
 
     const list = App.getReceiptsForStudentTerm(student, grade, term);
 
     if (receiptModalTitle) receiptModalTitle.textContent = "Receipts (Installments)";
-    if (receiptModalMeta) receiptModalMeta.textContent = `${student} • Grade ${grade} • Term ${term} • ${list.length} receipt(s)`;
+    if (receiptModalMeta)
+      receiptModalMeta.textContent = `${student} • Grade ${grade} • Term ${term} • ${list.length} receipt(s)`;
 
     receiptModalTbody.innerHTML = "";
     if (!list.length) {
@@ -410,9 +429,178 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // ===== NEW: Student datalist + autofill =====
+  function fillStudentDatalist() {
+    if (!studentsDatalist) return;
+    studentsDatalist.innerHTML = "";
+    const names = [...new Set((App.state.students || []).map((s) => s.student))].sort((a, b) =>
+      a.localeCompare(b)
+    );
+    for (const name of names) {
+      const opt = document.createElement("option");
+      opt.value = name;
+      studentsDatalist.appendChild(opt);
+    }
+  }
+
+  function fillGradeTermSelects() {
+    if (payGrade) {
+      payGrade.innerHTML = "";
+      for (const g of App.CONFIG.GRADES) {
+        const opt = document.createElement("option");
+        opt.value = String(g);
+        opt.textContent = g === 0 ? "Pre-Primary" : `Grade ${g}`;
+        payGrade.appendChild(opt);
+      }
+    }
+
+    if (payTerm) {
+      payTerm.innerHTML = "";
+      for (const t of App.CONFIG.TERMS) {
+        const opt = document.createElement("option");
+        opt.value = String(t);
+        opt.textContent = `Term ${t}`;
+        payTerm.appendChild(opt);
+      }
+      payTerm.value = String(App.CONFIG.DEFAULT_TERM);
+    }
+  }
+
+  function autofillFromStudentName() {
+    const name = (payStudent?.value || "").trim();
+    if (!name) {
+      if (studentHint) studentHint.textContent = "";
+      return;
+    }
+
+    const matches = (App.state.students || []).filter((s) => s.student === name);
+    if (!matches.length) {
+      if (studentHint) studentHint.textContent = "Student not found in students list.";
+      return;
+    }
+
+    const preferred =
+      matches.find((m) => Number(m.term) === Number(App.CONFIG.DEFAULT_TERM)) || matches[0];
+
+    if (payGrade) payGrade.value = String(preferred.grade);
+    if (payTerm) payTerm.value = String(preferred.term);
+
+    const fees = Number(preferred.fees || 0);
+    const basePaid = Number(preferred.basePaid || 0);
+
+    if (studentHint) {
+      studentHint.textContent = `Auto-filled: Grade ${preferred.grade}, Term ${preferred.term} • Fees: KES ${App.money(
+        fees
+      )} • Baseline Paid: KES ${App.money(basePaid)}`;
+    }
+  }
+
+  function openPaymentModal() {
+    if (!paymentModal) return;
+
+    fillGradeTermSelects();
+    fillStudentDatalist();
+
+    if (payStatus) payStatus.textContent = "";
+    if (payStudent) payStudent.value = "";
+    if (studentHint) studentHint.textContent = "";
+
+    if (payDate) payDate.value = "";
+    if (payReceiptNo) payReceiptNo.value = "";
+    if (payAmount) payAmount.value = "";
+
+    if (payMethod) payMethod.value = "M-Pesa";
+    if (payRef) payRef.value = "";
+    if (payReceivedBy) payReceivedBy.value = "";
+
+    paymentModal.classList.remove("hidden");
+    setTimeout(() => payStudent?.focus?.(), 50);
+  }
+
+  function closePaymentModal() {
+    paymentModal?.classList.add("hidden");
+  }
+
+  payStudent?.addEventListener("input", autofillFromStudentName);
+  payStudent?.addEventListener("change", autofillFromStudentName);
+
+  async function saveReceiptToSheet(payload) {
+    const url = App.CONFIG.API_URL;
+    if (!url) throw new Error("API_URL missing in data.js (App.CONFIG.API_URL).");
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
+    });
+
+    const text = await res.text();
+    if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
+    if (String(text).toLowerCase().includes("unauthorized")) throw new Error("Unauthorized");
+    return text;
+  }
+
+  btnRecordPayment?.addEventListener("click", openPaymentModal);
+  btnClosePaymentModal?.addEventListener("click", closePaymentModal);
+  paymentModal?.addEventListener("click", (e) => {
+    if (e.target === paymentModal) closePaymentModal();
+  });
+
+  btnSavePayment?.addEventListener("click", async () => {
+    try {
+      const student = (payStudent?.value || "").trim();
+      const grade = Number(payGrade?.value || "");
+      const term = Number(payTerm?.value || "");
+      const amount = Number(payAmount?.value || 0);
+
+      const date = (payDate?.value || "").trim();
+      const receiptNo = (payReceiptNo?.value || "").trim();
+      const method = (payMethod?.value || "").trim();
+      const ref = (payRef?.value || "").trim();
+      const receivedBy = (payReceivedBy?.value || "").trim();
+
+      if (!student) return alert("Student Name is required.");
+      if (!Number.isFinite(amount) || amount <= 0) return alert("Amount must be greater than 0.");
+      if (!Number.isFinite(grade)) return alert("Grade is required.");
+      if (!Number.isFinite(term)) return alert("Term is required.");
+      if (!method) return alert("Payment Method is required.");
+      if (!receivedBy) return alert("Received By is required.");
+
+      if (payStatus) payStatus.textContent = "Saving…";
+
+      await saveReceiptToSheet({
+        student,
+        grade,
+        term,
+        amount,
+        date,
+        receiptNo,
+        method,
+        ref,
+        receivedBy,
+      });
+
+      if (payStatus) payStatus.textContent = "Saved ✅ Syncing…";
+
+      const ok = await App.syncAll({ notifyNewReceipts: false });
+      if (ok) {
+        if (els.lastSync) els.lastSync.textContent = App.nowStr?.() || new Date().toLocaleString();
+        refreshAll();
+      }
+
+      if (payStatus) payStatus.textContent = "Done ✅";
+      setTimeout(closePaymentModal, 600);
+    } catch (e) {
+      console.error(e);
+      if (payStatus) payStatus.textContent = "Failed ❌";
+      alert(`Save failed: ${e.message || e}`);
+    }
+  });
+
   // ===== REFRESH =====
   function refreshAll() {
     populateFilters();
+    fillStudentDatalist();
 
     const studs = filteredStudents();
     const balanceRows = App.computeBalances(studs);
