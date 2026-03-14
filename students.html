@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Greenshine Academy • Students</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="students.css" />
+</head>
+<body>
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo-mark" aria-hidden="true"></div>
+      <div class="brand-text">
+        <h1>Greenshine Academy</h1>
+        <p>Students • Statements • Receipts • Payment Status</p>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <a class="btn btn-ghost" href="index.html">Dashboard</a>
+      <a id="btnTruthBell" class="btn" href="messages.html" title="Backend Truth / Messages">
+        🔔 <span id="truthBadge" class="hidden">0</span>
+      </a>
+      <div class="status-pill">
+        <span class="dot"></span>
+        <span id="statusText">Ready</span>
+      </div>
+      <button id="btnSyncNow" class="btn btn-primary" type="button">Sync Now</button>
+      <button id="btnDownloadAllStatements" class="btn" type="button">Download All Statements PDF</button>
+      <button id="btnDownloadInvalidStudents" class="btn btn-ghost" type="button">Invalid Students PDF</button>
+    </div>
+  </header>
+
+  <main class="container students-page">
+    <section class="meta-strip">
+      <div class="meta-card">
+        <div class="meta-title">Students</div>
+        <div class="meta-value" id="studentsCount">0</div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-title">Underpaid</div>
+        <div class="meta-value" id="countUnder">0</div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-title">Cleared</div>
+        <div class="meta-value" id="countFull">0</div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-title">Overpaid</div>
+        <div class="meta-value" id="countOver">0</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2>Student Filters</h2>
+          <p>Filter students by grade, term, search and payment status.</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="filterGrade">Filter by Grade</label>
+          <select id="filterGrade" name="filterGrade">
+            <option value="">All Grades</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="filterTerm">Filter by Term</label>
+          <select id="filterTerm" name="filterTerm">
+            <option value="">All Terms</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="studentSearch">Search student</label>
+          <input
+            id="studentSearch"
+            name="studentSearch"
+            type="text"
+            placeholder="student / adm no"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="field">
+          <label for="studentStatusFilter">Status</label>
+          <select id="studentStatusFilter" name="studentStatusFilter">
+            <option value="ALL">All Students</option>
+            <option value="UNDERPAID">Underpaid</option>
+            <option value="FULLY PAID">Cleared</option>
+            <option value="OVERPAID">Overpaid</option>
+            <option value="IDENTITY INCOMPLETE">Identity Incomplete</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row-inline" style="padding: 0 16px 16px;">
+        <button id="btnApplyFilters" class="btn" type="button">Apply</button>
+        <button id="btnResetFilters" class="btn btn-ghost" type="button">Reset</button>
+        <span class="status">Last sync: <span id="lastSync">—</span></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2>Student Statements</h2>
+          <p>Statement PDF and receipt history per student.</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="studentStatementsTable" class="table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>ADM NO.</th>
+              <th>Grade</th>
+              <th>Term</th>
+              <th>BAL B/F</th>
+              <th>TOTAL PAID</th>
+              <th>SCHOOL FEES</th>
+              <th>BALANCE</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>Greenshine Academy Student Statements</div>
+      <div>&copy; <span id="yearNow"></span> All rights reserved.</div>
+    </div>
+  </footer>
+
+  <div id="receiptModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 id="receiptModalTitle">Receipts</h2>
+          <p id="receiptModalMeta"></p>
+        </div>
+        <button id="btnCloseReceiptModal" class="btn btn-ghost" type="button">Close</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="table-wrap">
+          <table id="receiptModalTable" class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Receipt No.</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>PDF</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+
+  <script src="animations.js"></script>
+  <script src="data.js"></script>
+  <script src="truth.js"></script>
+  <script src="balance.js"></script>
+  <script src="pdf.js"></script>
+  <script src="records.js"></script>
+  <script src="students.js"></script>
+
+  <script>
+    const yearNowEl = document.getElementById("yearNow");
+    if (yearNowEl) yearNowEl.textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

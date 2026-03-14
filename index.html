@@ -15,10 +15,15 @@
       <div class="logo-mark" aria-hidden="true"></div>
       <div class="brand-text">
         <h1>Greenshine Academy</h1>
-        <p>Finance Dashboard • Installments • Receipts • Statements</p>
+        <p>Finance Dashboard • Summary • Installments • Receipts</p>
       </div>
     </div>
+
     <div class="topbar-actions">
+      <a id="btnStudentsPage" class="btn btn-ghost" href="students.html">Students</a>
+      <a id="btnTruthBell" class="btn" href="messages.html" title="Backend Truth / Messages">
+        🔔 <span id="truthBadge" class="hidden">0</span>
+      </a>
       <div class="status-pill">
         <span class="dot"></span>
         <span id="statusText">Ready</span>
@@ -32,79 +37,341 @@
 
   <main class="container">
     <section class="meta-strip">
-      <div class="meta-card"><div class="meta-title">Students</div><div class="meta-value" id="studentsCount">0</div></div>
-      <div class="meta-card"><div class="meta-title">Payments (Receipts)</div><div class="meta-value" id="paymentsCount">0</div></div>
-      <div class="meta-card"><div class="meta-title">Last Sync</div><div class="meta-value" id="lastSync">—</div></div>
-      <div class="meta-card"><div class="meta-title">Current Term</div><div class="meta-value"><span class="badge">TERM 1</span></div></div>
+      <div class="meta-card">
+        <div class="meta-title">Students</div>
+        <div class="meta-value" id="studentsCount">0</div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-title">Payments (Receipts)</div>
+        <div class="meta-value" id="paymentsCount">0</div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-title">Last Sync</div>
+        <div class="meta-value" id="lastSync">—</div>
+      </div>
+      <div class="meta-card">
+        <div class="meta-title">Current Term</div>
+        <div class="meta-value"><span class="badge">TERM 1</span></div>
+      </div>
     </section>
 
     <section class="card">
       <div class="card-header">
-        <h2>Filters</h2>
-        <p>Grades: 0–6 • Terms: 1–3 • Defaults to Term 1</p>
+        <div>
+          <h2>Summary Filters</h2>
+          <p>Filter dashboard summary by grade and term.</p>
+        </div>
       </div>
+
       <div class="row">
-        <div class="field"><label for="filterGrade">Filter by Grade</label><select id="filterGrade" name="filterGrade"><option value="">All Grades</option></select></div>
-        <div class="field"><label for="filterTerm">Filter by Term</label><select id="filterTerm" name="filterTerm"><option value="">All Terms</option></select></div>
-        <div class="field"><label for="filterActions">Apply</label><div id="filterActions" class="row-inline"><button id="btnApplyFilters" class="btn" type="button">Apply</button><button id="btnResetFilters" class="btn btn-ghost" type="button">Reset</button></div></div>
-        <div class="field"><label for="receiptSearch">Search receipts</label><input id="receiptSearch" name="receiptSearch" type="text" placeholder="receipt / student / reference" autocomplete="off" /></div>
+        <div class="field">
+          <label for="filterGrade">Filter by Grade</label>
+          <select id="filterGrade" name="filterGrade">
+            <option value="">All Grades</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="filterTerm">Filter by Term</label>
+          <select id="filterTerm" name="filterTerm">
+            <option value="">All Terms</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="filterActions">Apply</label>
+          <div id="filterActions" class="row-inline">
+            <button id="btnApplyFilters" class="btn" type="button">Apply</button>
+            <button id="btnResetFilters" class="btn btn-ghost" type="button">Reset</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="receiptSearch">Search receipts</label>
+          <input
+            id="receiptSearch"
+            name="receiptSearch"
+            type="text"
+            placeholder="receipt / student / reference / adm no"
+            autocomplete="off"
+          />
+        </div>
       </div>
     </section>
 
     <section class="kpi-grid">
-      <article class="kpi"><div class="kpi-label">Expected</div><div class="kpi-value" id="kpiExpected">KES 0.00</div><div class="kpi-sub">Total fees due (filtered)</div></article>
-      <article class="kpi"><div class="kpi-label">Collected</div><div class="kpi-value" id="kpiCollected">KES 0.00</div><div class="kpi-sub">Baseline + installments (filtered)</div></article>
-      <article class="kpi"><div class="kpi-label">Outstanding</div><div class="kpi-value" id="kpiOutstanding">KES 0.00</div><div class="kpi-sub">Only underpaid balances</div></article>
-      <article class="kpi"><div class="kpi-label">Collection Rate</div><div class="kpi-value" id="kpiRate">0.0%</div><div class="kpi-sub">Collected ÷ expected</div></article>
+      <article class="kpi">
+        <div class="kpi-label">Total Due</div>
+        <div class="kpi-value" id="kpiExpected">KES 0.00</div>
+        <div class="kpi-sub">School fees + balance b/f</div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-label">Total Paid</div>
+        <div class="kpi-value" id="kpiCollected">KES 0.00</div>
+        <div class="kpi-sub">Updated from backend finance sheet</div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-label">Outstanding</div>
+        <div class="kpi-value" id="kpiOutstanding">KES 0.00</div>
+        <div class="kpi-sub">Only underpaid balances</div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-label">Collection Rate</div>
+        <div class="kpi-value" id="kpiRate">0.0%</div>
+        <div class="kpi-sub">Total paid ÷ total due</div>
+      </article>
     </section>
 
-    <section class="meta-strip">
-      <div class="meta-card"><div class="meta-title">Underpaid Students</div><div class="meta-value" id="countUnder">0</div></div>
-      <div class="meta-card"><div class="meta-title">Fully Paid Students</div><div class="meta-value" id="countFull">0</div></div>
-      <div class="meta-card"><div class="meta-title">Overpaid Students</div><div class="meta-value" id="countOver">0</div></div>
-      <div class="meta-card"><div class="meta-title">New Receipts Today</div><div class="meta-value" id="countToday">0</div></div>
+    <section class="kpi-grid">
+      <article class="kpi">
+        <div class="kpi-label">Underpaid</div>
+        <div class="kpi-value" id="countUnder">0</div>
+        <div class="kpi-sub">Students owing the school</div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-label">Cleared</div>
+        <div class="kpi-value" id="countFull">0</div>
+        <div class="kpi-sub">Students with zero balance</div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-label">Overpaid</div>
+        <div class="kpi-value" id="countOver">0</div>
+        <div class="kpi-sub">Students owed by the school</div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-label">Receipts Today</div>
+        <div class="kpi-value" id="countToday">0</div>
+        <div class="kpi-sub">Receipts recorded today</div>
+      </article>
     </section>
 
-    <section class="grid-2">
-      <section class="card"><div class="card-header"><h2>By Grade (Bar)</h2><p>Expected vs Collected vs Outstanding</p></div><canvas id="chartGrade" height="120"></canvas></section>
-      <section class="card"><div class="card-header"><h2>By Term (Bar)</h2><p>Expected vs Collected vs Outstanding</p></div><canvas id="chartTerm" height="120"></canvas></section>
-    </section>
+    <section class="charts-grid">
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h2>By Grade</h2>
+            <p>Due, paid and outstanding grouped by class</p>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartGrade"></canvas>
+        </div>
+      </article>
 
-    <section class="grid-2">
-      <section class="card"><div class="card-header"><h2>Payment Status (Pie)</h2><p>Underpaid vs Fully Paid vs Overpaid</p></div><canvas id="chartPieStatus" height="120"></canvas></section>
-      <section class="card"><div class="card-header"><h2>Payment Methods (Pie)</h2><p>From receipts/installments sheet</p></div><canvas id="chartPieMethods" height="120"></canvas></section>
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h2>By Term</h2>
+            <p>Financial summary by term</p>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartTerm"></canvas>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h2>Payment Status</h2>
+            <p>Underpaid, cleared and overpaid students</p>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartPieStatus"></canvas>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h2>Payment Methods</h2>
+            <p>Breakdown of receipt methods</p>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartPieMethods"></canvas>
+        </div>
+      </article>
     </section>
 
     <section class="card">
-      <div class="card-header"><h2>Today's Receipts (Front)</h2><p>Receipts recorded today (from Installments sheet). Download instantly.</p></div>
-      <div class="table-wrap"><table class="table" id="latestReceiptsTable"><thead><tr><th>Date</th><th>Receipt No.</th><th>Student</th><th>Grade</th><th>Term</th><th>Amount</th><th>Action</th></tr></thead><tbody></tbody></table></div>
+      <div class="card-header">
+        <div>
+          <h2>Latest Receipts</h2>
+          <p>Most recent receipts from the installments sheet</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="latestReceiptsTable" class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Receipt No.</th>
+              <th>Student</th>
+              <th>Grade</th>
+              <th>Term</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>PDF</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
 
     <section class="card">
-      <div class="card-header"><h2>Top Defaulters (Underpaid)</h2><p>Highest outstanding balances for selected filters.</p></div>
-      <div class="table-wrap"><table class="table" id="defaultersTable"><thead><tr><th>Student</th><th>Grade</th><th>Term</th><th>Fees</th><th>Collected</th><th>Outstanding</th><th>% Paid</th></tr></thead><tbody></tbody></table></div>
+      <div class="card-header">
+        <div>
+          <h2>Top Defaulters</h2>
+          <p>Students with the highest outstanding balances</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table id="defaultersTable" class="table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Grade</th>
+              <th>Term</th>
+              <th>Total Due</th>
+              <th>Total Paid</th>
+              <th>Balance</th>
+              <th>Rate</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
 
     <section class="card">
-      <div class="card-header"><h2>All Payments (Installments / Receipts)</h2><p>Each row is a receipt (from Installments sheet).</p></div>
-      <div class="table-wrap"><table class="table" id="paymentsTable"><thead><tr><th>Date</th><th>Receipt No.</th><th>Student</th><th>Grade</th><th>Term</th><th>Amount</th><th>Method</th><th>Reference</th><th>Received By</th><th>Action</th></tr></thead><tbody></tbody></table></div>
-    </section>
+      <div class="card-header">
+        <div>
+          <h2>Payments Installments</h2>
+          <p>All recorded receipts</p>
+        </div>
+      </div>
 
-    <section class="card" id="studentStatementsCard">
-      <div class="card-header"><h2>Student Statements</h2><p>Total Paid = baseline TOTAL PAID (Students sheet) + receipts (Installments sheet) from 25 Feb 2026 onward.</p></div>
-      <div class="row-inline" style="padding: 0 16px 12px;"><button id="btnDownloadAllStatements" class="btn btn-primary" type="button">Download ALL statements (PDF)</button><small class="status" id="statementsHint">Tip: Use Grade/Term filters first, then download.</small></div>
-      <div class="table-wrap"><table class="table" id="studentStatementsTable"><thead><tr><th>Student</th><th>Grade</th><th>Term</th><th>Fees</th><th>Total Paid (Term)</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+      <div class="table-wrap">
+        <table id="paymentsTable" class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Receipt No.</th>
+              <th>Student</th>
+              <th>Grade</th>
+              <th>Term</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Reference</th>
+              <th>Received By</th>
+              <th>PDF</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
-
-    <footer class="footer"><div class="footer-inner"><span>© <span id="yearNow"></span> Greenshine Academy</span><span class="muted">Green • White • Brown • Black</span></div></footer>
   </main>
 
-  <div id="receiptModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="receiptModalTitle">
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>Greenshine Academy Finance Dashboard</div>
+      <div>&copy; <span id="yearNow"></span> All rights reserved.</div>
+    </div>
+  </footer>
+
+  <div id="paymentModal" class="modal hidden">
     <div class="modal-card">
-      <div class="modal-header"><h3 id="receiptModalTitle">Receipts</h3><button id="btnCloseReceiptModal" class="btn btn-ghost" type="button">Close</button></div>
+      <div class="modal-header">
+        <h2>Record Payment</h2>
+        <button id="btnClosePaymentModal" class="btn btn-ghost" type="button">Close</button>
+      </div>
       <div class="modal-body">
-        <div id="receiptModalMeta" class="muted"></div>
-        <div class="table-wrap"><table class="table" id="receiptModalTable"><thead><tr><th>Date</th><th>Receipt No.</th><th>Amount</th><th>Method</th><th>Download</th></tr></thead><tbody></tbody></table></div>
+        <div class="field">
+          <label for="payStudent">Student</label>
+          <input id="payStudent" list="studentsDatalist" type="text" placeholder="Type student name" />
+          <datalist id="studentsDatalist"></datalist>
+          <small id="studentHint" class="status"></small>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="payDate">Date</label>
+            <input id="payDate" type="text" placeholder="M/D/YYYY" />
+          </div>
+          <div class="field">
+            <label for="payReceiptNo">Receipt No.</label>
+            <input id="payReceiptNo" type="text" placeholder="Receipt number" />
+          </div>
+          <div class="field">
+            <label for="payAmount">Amount</label>
+            <input id="payAmount" type="number" step="0.01" min="0" placeholder="0.00" />
+          </div>
+          <div class="field">
+            <label for="payGrade">Grade</label>
+            <input id="payGrade" type="number" min="0" />
+          </div>
+          <div class="field">
+            <label for="payTerm">Term</label>
+            <select id="payTerm">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="payMethod">Payment Method</label>
+            <select id="payMethod">
+              <option value="M-Pesa">M-Pesa</option>
+              <option value="Cash">Cash</option>
+              <option value="Bank">Bank</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="payRef">Reference</label>
+            <input id="payRef" type="text" placeholder="Transaction code / reference" />
+          </div>
+          <div class="field">
+            <label for="payReceivedBy">Received By</label>
+            <input id="payReceivedBy" type="text" placeholder="Staff name" />
+          </div>
+        </div>
+
+        <div class="row-inline">
+          <button id="btnSavePayment" class="btn btn-primary" type="button">Save Payment</button>
+          <span id="payStatus" class="status"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="receiptModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 id="receiptModalTitle">Receipts</h2>
+          <p id="receiptModalMeta"></p>
+        </div>
+        <button id="btnCloseReceiptModal" class="btn btn-ghost" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="table-wrap">
+          <table id="receiptModalTable" class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Receipt No.</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>PDF</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -117,82 +384,16 @@
 
   <script src="animations.js"></script>
   <script src="data.js"></script>
-  <script src="installments.js"></script>
+  <script src="truth.js"></script>
+  <script src="balance.js"></script>
+  <script src="pdf.js"></script>
+  <script src="records.js"></script>
+  <script src="charts.js"></script>
   <script src="dashboard.js"></script>
 
-  <script>document.getElementById("yearNow").textContent = new Date().getFullYear();</script>
+  <script>
+    const yearNowEl = document.getElementById("yearNow");
+    if (yearNowEl) yearNowEl.textContent = new Date().getFullYear();
+  </script>
 </body>
-<div id="paymentModal" class="modal hidden">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h2>Record Payment</h2>
-      <button id="btnClosePaymentModal" class="btn" type="button">Close</button>
-    </div>
-
-    <div class="modal-body">
-      <div class="row" style="grid-template-columns: 1.4fr 1fr 1fr; gap:12px;">
-        <div class="field">
-          <label>Student Name</label>
-          <input id="payStudent" list="studentsDatalist" placeholder="Start typing name..." />
-          <datalist id="studentsDatalist"></datalist>
-          <div id="studentHint" class="muted" style="margin-top:6px;"></div>
-        </div>
-
-        <div class="field">
-          <label>Grade</label>
-          <input id="payGrade" type="number" placeholder="e.g. 5" />
-        </div>
-
-        <div class="field">
-          <label>Term</label>
-          <input id="payTerm" type="number" placeholder="e.g. 1" />
-        </div>
-      </div>
-
-      <div class="row" style="grid-template-columns: 1fr 1fr 1fr; gap:12px;">
-        <div class="field">
-          <label>Amount Paid</label>
-          <input id="payAmount" type="number" placeholder="e.g. 3000" />
-        </div>
-
-        <div class="field">
-          <label>Payment Method</label>
-          <input id="payMethod" placeholder="MPESA / CASH" value="MPESA" />
-        </div>
-
-        <div class="field">
-          <label>Reference</label>
-          <input id="payRef" placeholder="Optional" />
-        </div>
-      </div>
-
-      <div class="row" style="grid-template-columns: 1fr 1fr; gap:12px;">
-        <div class="field">
-          <label>Received By</label>
-          <input id="payReceivedBy" placeholder="e.g. JADE" />
-        </div>
-
-        <div class="field">
-          <label>Date (optional)</label>
-          <input id="payDate" placeholder="Leave blank = today" />
-        </div>
-      </div>
-
-      <div class="row" style="grid-template-columns: 1fr 1fr; gap:12px;">
-        <div class="field">
-          <label>Receipt No. (optional)</label>
-          <input id="payReceiptNo" placeholder="Leave blank = auto" />
-        </div>
-
-        <div class="field" style="display:flex; align-items:flex-end; gap:10px;">
-          <button id="btnSavePayment" class="btn btn-primary" type="button" style="width:100%;">
-            Save Payment
-          </button>
-        </div>
-      </div>
-
-      <div id="payStatus" class="muted" style="padding: 0 16px 16px;"></div>
-    </div>
-  </div>
-</div>
 </html>
