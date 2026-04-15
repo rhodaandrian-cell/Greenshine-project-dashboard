@@ -13,7 +13,7 @@
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vSedPYB_UrkW4WVhO39C62ENGY96D5sBi9d30axlSlegxgguL_KfgZiyLGUcNqjE7zMDZT-aMeA0f6p/pub?gid=841135586&single=true&output=csv",
 
     POLL_MS: 15000,
-    DEFAULT_TERM: 1,
+    DEFAULT_TERM: 2,
     GRADES: [0, 1, 2, 3, 4, 5, 6],
     TERMS: [1, 2, 3],
     SEEN_RECEIPTS_KEY: "greenshine_seen_receipts_v1",
