@@ -14,45 +14,40 @@ document.addEventListener("DOMContentLoaded", () => {
   const byId = (id) => document.getElementById(id);
 
   const els = {
-    btnSyncNow: byId("btnSyncNow"),
-    btnApplyFilters: byId("btnApplyFilters"),
-    btnResetFilters: byId("btnResetFilters"),
-    btnDownloadAllStatements: byId("btnDownloadAllStatements"),
-    btnDownloadInvalidStudents: byId("btnDownloadInvalidStudents"),
+    btnSyncNow:                byId("btnSyncNow"),
+    btnApplyFilters:           byId("btnApplyFilters"),
+    btnResetFilters:           byId("btnResetFilters"),
+    btnDownloadAllStatements:  byId("btnDownloadAllStatements"),
+    btnDownloadInvalidStudents:byId("btnDownloadInvalidStudents"),
 
-    filterGrade: byId("filterGrade"),
-    filterTerm: byId("filterTerm"),
-    studentSearch: byId("studentSearch"),
+    filterGrade:         byId("filterGrade"),
+    filterTerm:          byId("filterTerm"),
+    filterYear:          byId("filterYear"),
+    studentSearch:       byId("studentSearch"),
     studentStatusFilter: byId("studentStatusFilter"),
 
     studentsCount: byId("studentsCount"),
-    countUnder: byId("countUnder"),
-    countFull: byId("countFull"),
-    countOver: byId("countOver"),
-    lastSync: byId("lastSync"),
+    countUnder:    byId("countUnder"),
+    countFull:     byId("countFull"),
+    countOver:     byId("countOver"),
+    lastSync:      byId("lastSync"),
 
     statementsTbody: $("#studentStatementsTable tbody"),
   };
 
-  let termInitialized = false;
-
-  function money(n) {
-    return App.money ? App.money(n) : Number(n || 0).toLocaleString();
-  }
-
-  function escapeHtml(v) {
-    return App.escapeHtml ? App.escapeHtml(v) : String(v ?? "");
-  }
+  function money(n)     { return App.money     ? App.money(n)     : Number(n || 0).toLocaleString(); }
+  function escapeHtml(v){ return App.escapeHtml ? App.escapeHtml(v) : String(v ?? ""); }
 
   function currentFilters() {
-    const grade = els.filterGrade?.value ?? "";
-    const term = els.filterTerm?.value ?? "";
-    const q = String(els.studentSearch?.value || "").trim().toLowerCase();
+    const grade  = els.filterGrade?.value  ?? "";
+    const term   = els.filterTerm?.value   ?? "";
+    const year   = els.filterYear?.value   ?? "";
+    const q      = String(els.studentSearch?.value || "").trim().toLowerCase();
     const status = els.studentStatusFilter?.value || "ALL";
-
     return {
-      grade: grade === "" ? null : Number(grade),
-      term: term === "" ? null : Number(term),
+      grade:  grade  === "" ? null : Number(grade),
+      term:   term   === "" ? null : Number(term),
+      year:   year   === "" ? null : Number(year),
       query: q,
       status,
     };
@@ -60,81 +55,97 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function populateFilters() {
     if (els.filterGrade) {
-      const current = els.filterGrade.value;
+      const cur = els.filterGrade.value;
       els.filterGrade.innerHTML = `<option value="">All Grades</option>`;
       (App.CONFIG.GRADES || []).forEach((g) => {
-        const opt = document.createElement("option");
-        opt.value = String(g);
-        opt.textContent = String(g);
-        els.filterGrade.appendChild(opt);
+        const o = document.createElement("option");
+        o.value = String(g); o.textContent = `Grade ${g}`;
+        els.filterGrade.appendChild(o);
       });
-      els.filterGrade.value = current || "";
+      els.filterGrade.value = cur || "";
     }
 
     if (els.filterTerm) {
-      const current = els.filterTerm.value;
+      const cur = els.filterTerm.value;
       els.filterTerm.innerHTML = `<option value="">All Terms</option>`;
       (App.CONFIG.TERMS || []).forEach((t) => {
-        const opt = document.createElement("option");
-        opt.value = String(t);
-        opt.textContent = String(t);
-        els.filterTerm.appendChild(opt);
+        const o = document.createElement("option");
+        o.value = String(t); o.textContent = `Term ${t}`;
+        els.filterTerm.appendChild(o);
       });
-      if (!termInitialized) {
-        els.filterTerm.value = String(App.CONFIG.DEFAULT_TERM || 1);
-        termInitialized = true;
-      } else {
-        els.filterTerm.value = current || "";
-      }
+      els.filterTerm.value = cur !== undefined ? cur : String(App.CONFIG.DEFAULT_TERM ?? "");
+    }
+
+    if (els.filterYear) {
+      const cur   = els.filterYear.value;
+      const years = [...new Set((App.state.students || []).map((r) => r.year).filter(Boolean))].sort((a,b) => b - a);
+      els.filterYear.innerHTML = `<option value="">All Years</option>`;
+      years.forEach((y) => {
+        const o = document.createElement("option");
+        o.value = String(y); o.textContent = String(y);
+        els.filterYear.appendChild(o);
+      });
+      els.filterYear.value = cur || "";
     }
   }
 
   function allStudentRows() {
-    const baseRows = App.computeLiveFinanceRows?.() || App.state.students || [];
-    return App.computeBalances(baseRows);
+    const base = App.computeLiveFinanceRows?.() || App.state.students || [];
+    return App.computeBalances(base);
   }
 
   function filteredStudents() {
-    const { grade, term, query, status } = currentFilters();
+    const { grade, term, year, query, status } = currentFilters();
     let rows = allStudentRows();
 
-    if (grade !== null) rows = rows.filter((r) => Number(r.grade) === grade);
-    if (term !== null) rows = rows.filter((r) => Number(r.term) === term);
+    if (grade  !== null) rows = rows.filter((r) => Number(r.grade) === grade);
+    if (term   !== null) rows = rows.filter((r) => Number(r.term)  === term);
+    if (year   !== null) rows = rows.filter((r) => Number(r.year)  === year);
     if (status !== "ALL") rows = rows.filter((r) => String(r.status || "") === status);
     if (query) {
-      rows = rows.filter((r) => {
-        return (
-          String(r.student || "").toLowerCase().includes(query) ||
-          String(r.admNo || "").toLowerCase().includes(query)
-        );
-      });
+      rows = rows.filter((r) =>
+        String(r.student || "").toLowerCase().includes(query) ||
+        String(r.admNo   || "").toLowerCase().includes(query)
+      );
     }
     return rows;
   }
 
   function renderCounts(allRows) {
-    const validRows = (allRows || []).filter((r) => r.hasIdentity !== false);
-    const under = validRows.filter((r) => Number(r.computedBalance ?? r.balance ?? 0) > 0).length;
-    const full = validRows.filter((r) => Number(r.computedBalance ?? r.balance ?? 0) === 0).length;
-    const over = validRows.filter((r) => Number(r.computedBalance ?? r.balance ?? 0) < 0).length;
+    const valid = (allRows || []).filter((r) => r.hasIdentity !== false);
+    const under = valid.filter((r) => Number(r.computedBalance ?? r.balance ?? 0) > 0).length;
+    const full  = valid.filter((r) => Number(r.computedBalance ?? r.balance ?? 0) === 0).length;
+    const over  = valid.filter((r) => Number(r.computedBalance ?? r.balance ?? 0) < 0).length;
 
-    if (els.studentsCount) els.studentsCount.textContent = String((allRows || []).length);
-    if (els.countUnder) els.countUnder.textContent = String(under);
-    if (els.countFull) els.countFull.textContent = String(full);
-    if (els.countOver) els.countOver.textContent = String(over);
+    // Count unique enrolled students from the register — deduplicate by ADM number
+    const uniqueAdmNos = new Set(
+      (App.state.register || [])
+        .map((r) => String(r.admNo || "").trim())
+        .filter((a) => a !== "")
+    );
+    const registerCount = uniqueAdmNos.size ||
+      (App.state.register || []).filter((r) => String(r.student || "").trim()).length;
+    if (els.studentsCount) els.studentsCount.textContent = String(registerCount);
+    if (els.countUnder)    els.countUnder.textContent    = String(under);
+    if (els.countFull)     els.countFull.textContent     = String(full);
+    if (els.countOver)     els.countOver.textContent     = String(over);
+  }
+
+  function balClass(val) {
+    if (val > 0) return "bal-under";
+    if (val < 0) return "bal-over";
+    return "bal-clear";
   }
 
   function renderStudentStatements(rows) {
     if (!els.statementsTbody) return;
 
     const sorted = rows.slice().sort((a, b) => {
-      const aBal = a.hasIdentity === false ? Number.POSITIVE_INFINITY : Number(a.computedBalance ?? a.balance ?? 0);
-      const bBal = b.hasIdentity === false ? Number.POSITIVE_INFINITY : Number(b.computedBalance ?? b.balance ?? 0);
-
-      const aRank = a.hasIdentity === false ? 3 : aBal > 0 ? 0 : aBal === 0 ? 1 : 2;
-      const bRank = b.hasIdentity === false ? 3 : bBal > 0 ? 0 : bBal === 0 ? 1 : 2;
-
-      if (aRank !== bRank) return aRank - bRank;
+      const aBal = a.hasIdentity === false ? Infinity : Number(a.computedBalance ?? a.balance ?? 0);
+      const bBal = b.hasIdentity === false ? Infinity : Number(b.computedBalance ?? b.balance ?? 0);
+      const aRk  = a.hasIdentity === false ? 3 : aBal > 0 ? 0 : aBal === 0 ? 1 : 2;
+      const bRk  = b.hasIdentity === false ? 3 : bBal > 0 ? 0 : bBal === 0 ? 1 : 2;
+      if (aRk !== bRk) return aRk - bRk;
       return Math.abs(bBal) - Math.abs(aBal);
     });
 
@@ -147,39 +158,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
     sorted.forEach((r) => {
       const canGenerate = r.hasIdentity !== false;
-      const balanceValue = Number(r.computedBalance ?? r.balance ?? 0);
+      const balVal      = Number(r.computedBalance ?? r.balance ?? 0);
 
       const tr = document.createElement("tr");
       if (canGenerate) {
-        if (balanceValue > 0) tr.classList.add("status-underpaid");
-        else if (balanceValue < 0) tr.classList.add("status-overpaid");
-        else tr.classList.add("status-fully-paid");
+        if (balVal > 0)      tr.classList.add("status-underpaid");
+        else if (balVal < 0) tr.classList.add("status-overpaid");
+        else                 tr.classList.add("status-fully-paid");
       }
 
       tr.innerHTML = `
         <td>${escapeHtml(r.student || "UNDEFINED")}</td>
-        <td>${escapeHtml(r.admNo || "UNDEFINED")}</td>
+        <td>${escapeHtml(r.admNo   || "UNDEFINED")}</td>
         <td>${escapeHtml(r.grade)}</td>
-        <td>${escapeHtml(r.term)}</td>
-        <td>${r.displayBalanceBF || "UNDEFINED"}</td>
+        <td>Term ${escapeHtml(r.term)}</td>
+        <td>${r.displayBalanceBF   || "UNDEFINED"}</td>
         <td><strong>${r.displayTotalPaid || "UNDEFINED"}</strong></td>
         <td>${App.isBlank?.(r.schoolFeesRaw) ? "UNDEFINED" : `KES ${money(r.schoolFees || 0)}`}</td>
-        <td>${r.displayComputedBalance || "UNDEFINED"}</td>
+        <td class="${balClass(balVal)}">${r.displayComputedBalance || "UNDEFINED"}</td>
         <td>${escapeHtml(r.status || "UNDEFINED")}</td>
         <td class="row-inline">
-          <button class="btn btn-primary" type="button" data-action="statement" ${canGenerate ? "" : "disabled"}>Fee Statement PDF</button>
-          <button class="btn" type="button" data-action="receipts" ${canGenerate ? "" : "disabled"}>View Receipts</button>
+          <button class="btn btn-primary" type="button" data-action="statement" ${canGenerate ? "" : "disabled"}>Statement PDF</button>
+          <button class="btn"            type="button" data-action="receipts"  ${canGenerate ? "" : "disabled"}>Receipts</button>
         </td>
       `;
 
       tr.querySelector('[data-action="statement"]')?.addEventListener("click", () => {
-        if (!canGenerate) return;
-        App.generateStudentStatementPDF?.(r);
+        if (canGenerate) App.generateStudentStatementPDF?.(r);
       });
 
       tr.querySelector('[data-action="receipts"]')?.addEventListener("click", () => {
-        if (!canGenerate) return;
-        window.Records?.openReceiptsModal?.(r);
+        if (canGenerate) window.Records?.openReceiptsModal?.(r);
       });
 
       els.statementsTbody.appendChild(tr);
@@ -191,7 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function refreshAll() {
     populateFilters();
     const allRows = allStudentRows();
-    const rows = filteredStudents();
+    const rows    = filteredStudents();
     renderCounts(allRows);
     renderStudentStatements(rows);
   }
@@ -210,9 +219,10 @@ document.addEventListener("DOMContentLoaded", () => {
   els.btnApplyFilters?.addEventListener("click", refreshAll);
 
   els.btnResetFilters?.addEventListener("click", () => {
-    if (els.filterGrade) els.filterGrade.value = "";
-    if (els.filterTerm) els.filterTerm.value = String(App.CONFIG.DEFAULT_TERM || 1);
-    if (els.studentSearch) els.studentSearch.value = "";
+    if (els.filterGrade)         els.filterGrade.value         = "";
+    if (els.filterTerm)          els.filterTerm.value          = "";
+    if (els.filterYear)          els.filterYear.value          = "";
+    if (els.studentSearch)       els.studentSearch.value       = "";
     if (els.studentStatusFilter) els.studentStatusFilter.value = "ALL";
     refreshAll();
   });

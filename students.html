@@ -21,8 +21,8 @@
     </div>
 
     <div class="topbar-actions">
-      <a class="btn btn-ghost" href="index.html">Dashboard</a>
-      <a id="btnTruthBell" class="btn" href="messages.html" title="Backend Truth / Messages">
+      <a class="btn btn-ghost" href="index.html">← Dashboard</a>
+      <a id="btnTruthBell" class="btn" href="messages.html" title="Finance Alerts">
         🔔 <span id="truthBadge" class="hidden">0</span>
       </a>
       <div class="status-pill">
@@ -36,9 +36,10 @@
   </header>
 
   <main class="container students-page">
+
     <section class="meta-strip">
       <div class="meta-card">
-        <div class="meta-title">Students</div>
+        <div class="meta-title">Enrolled Students</div>
         <div class="meta-value" id="studentsCount">0</div>
       </div>
       <div class="meta-card">
@@ -58,39 +59,42 @@
     <section class="card">
       <div class="card-header">
         <div>
-          <h2>Student Filters</h2>
-          <p>Filter students by grade, term, search and payment status.</p>
+          <h2>Filters</h2>
+          <p>Filter students by grade, term, year, name and payment status.</p>
         </div>
       </div>
 
-      <div class="row">
+      <div class="row" style="grid-template-columns: 1fr 1fr 1fr 1.6fr 1fr;">
         <div class="field">
-          <label for="filterGrade">Filter by Grade</label>
+          <label for="filterGrade">Grade</label>
           <select id="filterGrade" name="filterGrade">
             <option value="">All Grades</option>
           </select>
         </div>
-
         <div class="field">
-          <label for="filterTerm">Filter by Term</label>
+          <label for="filterTerm">Term</label>
           <select id="filterTerm" name="filterTerm">
             <option value="">All Terms</option>
           </select>
         </div>
-
+        <div class="field">
+          <label for="filterYear">Year</label>
+          <select id="filterYear" name="filterYear">
+            <option value="">All Years</option>
+          </select>
+        </div>
         <div class="field">
           <label for="studentSearch">Search student</label>
           <input
             id="studentSearch"
             name="studentSearch"
             type="text"
-            placeholder="student / adm no"
+            placeholder="student name or ADM no."
             autocomplete="off"
           />
         </div>
-
         <div class="field">
-          <label for="studentStatusFilter">Status</label>
+          <label for="studentStatusFilter">Payment Status</label>
           <select id="studentStatusFilter" name="studentStatusFilter">
             <option value="ALL">All Students</option>
             <option value="UNDERPAID">Underpaid</option>
@@ -101,9 +105,9 @@
         </div>
       </div>
 
-      <div class="row-inline" style="padding: 0 16px 16px;">
-        <button id="btnApplyFilters" class="btn" type="button">Apply</button>
-        <button id="btnResetFilters" class="btn btn-ghost" type="button">Reset</button>
+      <div class="row-inline" style="padding: 0 18px 16px;">
+        <button id="btnApplyFilters" class="btn btn-primary" type="button">Apply</button>
+        <button id="btnResetFilters" class="btn btn-ghost"   type="button">Reset</button>
         <span class="status">Last sync: <span id="lastSync">—</span></span>
       </div>
     </section>
@@ -121,13 +125,13 @@
           <thead>
             <tr>
               <th>Student</th>
-              <th>ADM NO.</th>
+              <th>ADM No.</th>
               <th>Grade</th>
               <th>Term</th>
-              <th>BAL B/F</th>
-              <th>TOTAL PAID</th>
-              <th>SCHOOL FEES</th>
-              <th>BALANCE</th>
+              <th>Bal B/F</th>
+              <th>Total Paid</th>
+              <th>School Fees</th>
+              <th>Balance</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -141,10 +145,11 @@
   <footer class="footer">
     <div class="container footer-inner">
       <div>Greenshine Academy Student Statements</div>
-      <div>&copy; <span id="yearNow"></span> All rights reserved.</div>
+      <div>© <span id="yearNow"></span> All rights reserved.</div>
     </div>
   </footer>
 
+  <!-- Receipt modal -->
   <div id="receiptModal" class="modal hidden">
     <div class="modal-card">
       <div class="modal-header">
@@ -152,9 +157,8 @@
           <h2 id="receiptModalTitle">Receipts</h2>
           <p id="receiptModalMeta"></p>
         </div>
-        <button id="btnCloseReceiptModal" class="btn btn-ghost" type="button">Close</button>
+        <button id="btnCloseReceiptModal" class="btn btn-ghost" type="button">✕ Close</button>
       </div>
-
       <div class="modal-body">
         <div class="table-wrap">
           <table id="receiptModalTable" class="table">

@@ -21,7 +21,7 @@
 
     <div class="topbar-actions">
       <a id="btnStudentsPage" class="btn btn-ghost" href="students.html">Students</a>
-      <a id="btnTruthBell" class="btn" href="messages.html" title="Backend Truth / Messages">
+      <a id="btnTruthBell" class="btn" href="messages.html" title="Finance Alerts">
         🔔 <span id="truthBadge" class="hidden">0</span>
       </a>
       <div class="status-pill">
@@ -29,16 +29,18 @@
         <span id="statusText">Ready</span>
       </div>
       <button id="btnSyncNow" class="btn btn-primary" type="button">Sync Now</button>
-      <button id="btnExportPayments" class="btn" type="button">Export Payments PDF</button>
-      <button id="btnClearSeen" class="btn btn-ghost" type="button">Reset Receipt Popups</button>
-      <button id="btnRecordPayment" class="btn btn-primary" type="button">Record Payment</button>
+      <button id="btnExportPayments" class="btn" type="button">Export PDF</button>
+      <button id="btnClearSeen" class="btn btn-ghost" type="button">Reset Popups</button>
+      <button id="btnRecordPayment" class="btn btn-primary" type="button">+ Record Payment</button>
     </div>
   </header>
 
   <main class="container">
+
+    <!-- Meta strip -->
     <section class="meta-strip">
       <div class="meta-card">
-        <div class="meta-title">Students</div>
+        <div class="meta-title">Enrolled Students</div>
         <div class="meta-value" id="studentsCount">0</div>
       </div>
       <div class="meta-card">
@@ -50,38 +52,38 @@
         <div class="meta-value" id="lastSync">—</div>
       </div>
       <div class="meta-card">
-        <div class="meta-title">Current Term</div>
-        <div class="meta-value"><span class="badge">TERM 2</span></div>
+        <div class="meta-title">Viewing</div>
+        <div class="meta-value"><span class="badge" id="currentTermBadge">ALL TERMS</span></div>
       </div>
     </section>
 
+    <!-- Filters -->
     <section class="card">
       <div class="card-header">
         <div>
-          <h2>Summary Filters</h2>
-          <p>Filter dashboard summary by grade and term.</p>
+          <h2>Filters</h2>
+          <p>Filter dashboard by grade, term and year.</p>
         </div>
       </div>
 
-      <div class="row">
+      <div class="row" style="grid-template-columns: 1fr 1fr 1fr 1.6fr 1fr;">
         <div class="field">
-          <label for="filterGrade">Filter by Grade</label>
+          <label for="filterGrade">Grade</label>
           <select id="filterGrade" name="filterGrade">
             <option value="">All Grades</option>
           </select>
         </div>
         <div class="field">
-          <label for="filterTerm">Filter by Term</label>
+          <label for="filterTerm">Term</label>
           <select id="filterTerm" name="filterTerm">
             <option value="">All Terms</option>
           </select>
         </div>
         <div class="field">
-          <label for="filterActions">Apply</label>
-          <div id="filterActions" class="row-inline">
-            <button id="btnApplyFilters" class="btn" type="button">Apply</button>
-            <button id="btnResetFilters" class="btn btn-ghost" type="button">Reset</button>
-          </div>
+          <label for="filterYear">Year</label>
+          <select id="filterYear" name="filterYear">
+            <option value="">All Years</option>
+          </select>
         </div>
         <div class="field">
           <label for="receiptSearch">Search receipts</label>
@@ -93,9 +95,17 @@
             autocomplete="off"
           />
         </div>
+        <div class="field">
+          <label for="filterActions">Apply</label>
+          <div id="filterActions" class="row-inline">
+            <button id="btnApplyFilters" class="btn btn-primary" type="button">Apply</button>
+            <button id="btnResetFilters" class="btn btn-ghost" type="button">Reset</button>
+          </div>
+        </div>
       </div>
     </section>
 
+    <!-- KPI row 1 -->
     <section class="kpi-grid">
       <article class="kpi">
         <div class="kpi-label">Total Due</div>
@@ -119,6 +129,7 @@
       </article>
     </section>
 
+    <!-- KPI row 2 -->
     <section class="kpi-grid">
       <article class="kpi">
         <div class="kpi-label">Underpaid</div>
@@ -142,6 +153,7 @@
       </article>
     </section>
 
+    <!-- Charts -->
     <section class="charts-grid">
       <article class="card">
         <div class="card-header">
@@ -150,9 +162,7 @@
             <p>Due, paid and outstanding grouped by class</p>
           </div>
         </div>
-        <div class="chart-wrap">
-          <canvas id="chartGrade"></canvas>
-        </div>
+        <div class="chart-wrap"><canvas id="chartGrade"></canvas></div>
       </article>
 
       <article class="card">
@@ -162,9 +172,7 @@
             <p>Financial summary by term</p>
           </div>
         </div>
-        <div class="chart-wrap">
-          <canvas id="chartTerm"></canvas>
-        </div>
+        <div class="chart-wrap"><canvas id="chartTerm"></canvas></div>
       </article>
 
       <article class="card">
@@ -174,9 +182,7 @@
             <p>Underpaid, cleared and overpaid students</p>
           </div>
         </div>
-        <div class="chart-wrap">
-          <canvas id="chartPieStatus"></canvas>
-        </div>
+        <div class="chart-wrap"><canvas id="chartPieStatus"></canvas></div>
       </article>
 
       <article class="card">
@@ -186,20 +192,18 @@
             <p>Breakdown of receipt methods</p>
           </div>
         </div>
-        <div class="chart-wrap">
-          <canvas id="chartPieMethods"></canvas>
-        </div>
+        <div class="chart-wrap"><canvas id="chartPieMethods"></canvas></div>
       </article>
     </section>
 
+    <!-- Latest receipts -->
     <section class="card">
       <div class="card-header">
         <div>
           <h2>Latest Receipts</h2>
-          <p>Most recent receipts from the installments sheet</p>
+          <p>15 most recent payments recorded</p>
         </div>
       </div>
-
       <div class="table-wrap">
         <table id="latestReceiptsTable" class="table">
           <thead>
@@ -219,6 +223,7 @@
       </div>
     </section>
 
+    <!-- Top defaulters -->
     <section class="card">
       <div class="card-header">
         <div>
@@ -226,7 +231,6 @@
           <p>Students with the highest outstanding balances</p>
         </div>
       </div>
-
       <div class="table-wrap">
         <table id="defaultersTable" class="table">
           <thead>
@@ -245,14 +249,14 @@
       </div>
     </section>
 
+    <!-- All installments -->
     <section class="card">
       <div class="card-header">
         <div>
           <h2>Payments Installments</h2>
-          <p>All recorded receipts</p>
+          <p>All recorded receipts — searchable above</p>
         </div>
       </div>
-
       <div class="table-wrap">
         <table id="paymentsTable" class="table">
           <thead>
@@ -273,40 +277,45 @@
         </table>
       </div>
     </section>
+
   </main>
 
   <footer class="footer">
     <div class="container footer-inner">
       <div>Greenshine Academy Finance Dashboard</div>
-      <div>&copy; <span id="yearNow"></span> All rights reserved.</div>
+      <div>© <span id="yearNow"></span> All rights reserved.</div>
     </div>
   </footer>
 
+  <!-- Record payment modal -->
   <div id="paymentModal" class="modal hidden">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>Record Payment</h2>
-        <button id="btnClosePaymentModal" class="btn btn-ghost" type="button">Close</button>
+        <div>
+          <h2>Record Payment</h2>
+          <p>Fill in the details below and click Save.</p>
+        </div>
+        <button id="btnClosePaymentModal" class="btn btn-ghost" type="button">✕ Close</button>
       </div>
       <div class="modal-body">
         <div class="field">
-          <label for="payStudent">Student</label>
-          <input id="payStudent" list="studentsDatalist" type="text" placeholder="Type student name" />
+          <label for="payStudent">Student Name</label>
+          <input id="payStudent" list="studentsDatalist" type="text" placeholder="Start typing a student name…" />
           <datalist id="studentsDatalist"></datalist>
           <small id="studentHint" class="status"></small>
         </div>
 
-        <div class="row">
+        <div class="row" style="grid-template-columns: repeat(4, 1fr);">
           <div class="field">
             <label for="payDate">Date</label>
             <input id="payDate" type="text" placeholder="M/D/YYYY" />
           </div>
           <div class="field">
             <label for="payReceiptNo">Receipt No.</label>
-            <input id="payReceiptNo" type="text" placeholder="Receipt number" />
+            <input id="payReceiptNo" type="text" placeholder="e.g. RCPT-001" />
           </div>
           <div class="field">
-            <label for="payAmount">Amount</label>
+            <label for="payAmount">Amount (KES)</label>
             <input id="payAmount" type="number" step="0.01" min="0" placeholder="0.00" />
           </div>
           <div class="field">
@@ -316,9 +325,9 @@
           <div class="field">
             <label for="payTerm">Term</label>
             <select id="payTerm">
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
+              <option value="1">Term 1</option>
+              <option value="2">Term 2</option>
+              <option value="3">Term 3</option>
             </select>
           </div>
           <div class="field">
@@ -332,7 +341,7 @@
           </div>
           <div class="field">
             <label for="payRef">Reference</label>
-            <input id="payRef" type="text" placeholder="Transaction code / reference" />
+            <input id="payRef" type="text" placeholder="Transaction code" />
           </div>
           <div class="field">
             <label for="payReceivedBy">Received By</label>
@@ -340,7 +349,7 @@
           </div>
         </div>
 
-        <div class="row-inline">
+        <div class="row-inline" style="padding-top: 8px;">
           <button id="btnSavePayment" class="btn btn-primary" type="button">Save Payment</button>
           <span id="payStatus" class="status"></span>
         </div>
@@ -348,6 +357,7 @@
     </div>
   </div>
 
+  <!-- Receipt history modal -->
   <div id="receiptModal" class="modal hidden">
     <div class="modal-card">
       <div class="modal-header">
@@ -355,7 +365,7 @@
           <h2 id="receiptModalTitle">Receipts</h2>
           <p id="receiptModalMeta"></p>
         </div>
-        <button id="btnCloseReceiptModal" class="btn btn-ghost" type="button">Close</button>
+        <button id="btnCloseReceiptModal" class="btn btn-ghost" type="button">✕ Close</button>
       </div>
       <div class="modal-body">
         <div class="table-wrap">
@@ -376,6 +386,7 @@
     </div>
   </div>
 
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>

@@ -14,37 +14,38 @@ document.addEventListener("DOMContentLoaded", () => {
   const byId = (id) => document.getElementById(id);
 
   const els = {
-    btnSyncNow: byId("btnSyncNow"),
-    btnExportPayments: byId("btnExportPayments"),
-    btnClearSeen: byId("btnClearSeen"),
+    btnSyncNow:       byId("btnSyncNow"),
+    btnExportPayments:byId("btnExportPayments"),
+    btnClearSeen:     byId("btnClearSeen"),
     btnRecordPayment: byId("btnRecordPayment"),
 
-    btnApplyFilters: byId("btnApplyFilters"),
-    btnResetFilters: byId("btnResetFilters"),
-    filterGrade: byId("filterGrade"),
-    filterTerm: byId("filterTerm"),
-    receiptSearch: byId("receiptSearch"),
+    btnApplyFilters:  byId("btnApplyFilters"),
+    btnResetFilters:  byId("btnResetFilters"),
+    filterGrade:      byId("filterGrade"),
+    filterTerm:       byId("filterTerm"),
+    filterYear:       byId("filterYear"),
+    receiptSearch:    byId("receiptSearch"),
 
-    studentsCount: byId("studentsCount"),
-    paymentsCount: byId("paymentsCount"),
-    lastSync: byId("lastSync"),
+    studentsCount:    byId("studentsCount"),
+    paymentsCount:    byId("paymentsCount"),
+    lastSync:         byId("lastSync"),
 
-    kpiExpected: byId("kpiExpected"),
-    kpiCollected: byId("kpiCollected"),
-    kpiOutstanding: byId("kpiOutstanding"),
-    kpiRate: byId("kpiRate"),
+    kpiExpected:      byId("kpiExpected"),
+    kpiCollected:     byId("kpiCollected"),
+    kpiOutstanding:   byId("kpiOutstanding"),
+    kpiRate:          byId("kpiRate"),
 
-    countUnder: byId("countUnder"),
-    countFull: byId("countFull"),
-    countOver: byId("countOver"),
-    countToday: byId("countToday"),
+    countUnder:       byId("countUnder"),
+    countFull:        byId("countFull"),
+    countOver:        byId("countOver"),
+    countToday:       byId("countToday"),
+
+    currentTermBadge: byId("currentTermBadge"),
 
     latestReceiptsTbody: $("#latestReceiptsTable tbody"),
-    defaultersTbody: $("#defaultersTable tbody"),
-    paymentsTbody: $("#paymentsTable tbody"),
+    defaultersTbody:     $("#defaultersTable tbody"),
+    paymentsTbody:       $("#paymentsTable tbody"),
   };
-
-  let termInitialized = false;
 
   function money(n) {
     return App.money ? App.money(n) : Number(n || 0).toLocaleString();
@@ -56,88 +57,120 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function currentFilters() {
     const grade = els.filterGrade?.value ?? "";
-    const term = els.filterTerm?.value ?? "";
-
+    const term  = els.filterTerm?.value  ?? "";
+    const year  = els.filterYear?.value  ?? "";
     return {
       grade: grade === "" ? null : Number(grade),
-      term: term === "" ? null : Number(term),
+      term:  term  === "" ? null : Number(term),
+      year:  year  === "" ? null : Number(year),
     };
   }
 
+  // ── Viewing badge ────────────────────────────────────────
+  function updateTermBadge() {
+    if (!els.currentTermBadge) return;
+    const { grade, term, year } = currentFilters();
+    const parts = [];
+    if (term  !== null) parts.push(`Term ${term}`);
+    if (year  !== null) parts.push(String(year));
+    if (grade !== null) parts.push(`Grade ${grade}`);
+    els.currentTermBadge.textContent = parts.length ? parts.join(" • ") : "ALL TERMS";
+  }
+
+  // ── Filters ──────────────────────────────────────────────
   function populateFilters() {
     if (els.filterGrade) {
-      const current = els.filterGrade.value;
+      const cur = els.filterGrade.value;
       els.filterGrade.innerHTML = `<option value="">All Grades</option>`;
       (App.CONFIG.GRADES || []).forEach((g) => {
-        const opt = document.createElement("option");
-        opt.value = String(g);
-        opt.textContent = String(g);
-        els.filterGrade.appendChild(opt);
+        const o = document.createElement("option");
+        o.value = String(g); o.textContent = `Grade ${g}`;
+        els.filterGrade.appendChild(o);
       });
-      els.filterGrade.value = current || "";
+      els.filterGrade.value = cur || "";
     }
 
     if (els.filterTerm) {
-      const current = els.filterTerm.value;
+      const cur = els.filterTerm.value;
       els.filterTerm.innerHTML = `<option value="">All Terms</option>`;
       (App.CONFIG.TERMS || []).forEach((t) => {
-        const opt = document.createElement("option");
-        opt.value = String(t);
-        opt.textContent = String(t);
-        els.filterTerm.appendChild(opt);
+        const o = document.createElement("option");
+        o.value = String(t); o.textContent = `Term ${t}`;
+        els.filterTerm.appendChild(o);
       });
+      els.filterTerm.value = cur !== undefined ? cur : String(App.CONFIG.DEFAULT_TERM ?? "");
+    }
 
-      if (!termInitialized) {
-        els.filterTerm.value = String(App.CONFIG.DEFAULT_TERM || 1);
-        termInitialized = true;
-      } else {
-        els.filterTerm.value = current || "";
-      }
+    if (els.filterYear) {
+      const cur   = els.filterYear.value;
+      const years = [...new Set((App.state.students || []).map((r) => r.year).filter(Boolean))].sort((a,b) => b - a);
+      els.filterYear.innerHTML = `<option value="">All Years</option>`;
+      years.forEach((y) => {
+        const o = document.createElement("option");
+        o.value = String(y); o.textContent = String(y);
+        els.filterYear.appendChild(o);
+      });
+      els.filterYear.value = cur || "";
     }
   }
 
   function filteredStudents() {
-    const { grade, term } = currentFilters();
+    const { grade, term, year } = currentFilters();
     let rows = [...(App.computeLiveFinanceRows?.() || App.state.students || [])];
     if (grade !== null) rows = rows.filter((r) => Number(r.grade) === grade);
-    if (term !== null) rows = rows.filter((r) => Number(r.term) === term);
+    if (term  !== null) rows = rows.filter((r) => Number(r.term)  === term);
+    if (year  !== null) rows = rows.filter((r) => Number(r.year)  === year);
     return rows;
   }
 
+  // ── KPIs ─────────────────────────────────────────────────
   function renderKpis(balanceRows) {
-    const validRows = balanceRows.filter((r) => r.hasIdentity !== false);
-    const totalDue = validRows.reduce((a, r) => a + Number(r.totalDue || 0), 0);
-    const totalPaid = validRows.reduce((a, r) => a + Number(r.liveTotalPaid ?? r.totalPaid ?? 0), 0);
-    const outstanding = validRows.reduce((a, r) => a + Math.max(Number(r.computedBalance ?? r.balance ?? 0), 0), 0);
-    const rate = totalDue > 0 ? (totalPaid / totalDue) * 100 : 0;
+    const valid      = balanceRows.filter((r) => r.hasIdentity !== false);
+    const totalDue   = valid.reduce((a, r) => a + Number(r.totalDue || 0), 0);
+    const totalPaid  = valid.reduce((a, r) => a + Number(r.liveTotalPaid ?? r.totalPaid ?? 0), 0);
+    const outstanding= valid.reduce((a, r) => a + Math.max(Number(r.computedBalance ?? r.balance ?? 0), 0), 0);
+    const rate       = totalDue > 0 ? (totalPaid / totalDue) * 100 : 0;
 
-    if (els.kpiExpected) els.kpiExpected.textContent = `KES ${money(totalDue)}`;
-    if (els.kpiCollected) els.kpiCollected.textContent = `KES ${money(totalPaid)}`;
+    if (els.kpiExpected)    els.kpiExpected.textContent    = `KES ${money(totalDue)}`;
+    if (els.kpiCollected)   els.kpiCollected.textContent   = `KES ${money(totalPaid)}`;
     if (els.kpiOutstanding) els.kpiOutstanding.textContent = `KES ${money(outstanding)}`;
-    if (els.kpiRate) els.kpiRate.textContent = `${rate.toFixed(1)}%`;
+
+    if (els.kpiRate) {
+      els.kpiRate.textContent = `${rate.toFixed(1)}%`;
+      els.kpiRate.className   = "kpi-value " + (rate >= 75 ? "rate-high" : rate >= 40 ? "rate-mid" : "rate-low");
+    }
 
     window.Animations?.pulseKpis?.();
   }
 
   function renderCounts(balanceRows) {
-    const validRows = balanceRows.filter((r) => r.hasIdentity !== false);
-    const under = validRows.filter((r) => Number(r.computedBalance ?? r.balance ?? 0) > 0).length;
-    const full = validRows.filter((r) => Number(r.computedBalance ?? r.balance ?? 0) === 0).length;
-    const over = validRows.filter((r) => Number(r.computedBalance ?? r.balance ?? 0) < 0).length;
+    const valid = balanceRows.filter((r) => r.hasIdentity !== false);
+    const under = valid.filter((r) => Number(r.computedBalance ?? r.balance ?? 0) > 0).length;
+    const full  = valid.filter((r) => Number(r.computedBalance ?? r.balance ?? 0) === 0).length;
+    const over  = valid.filter((r) => Number(r.computedBalance ?? r.balance ?? 0) < 0).length;
 
     if (els.countUnder) els.countUnder.textContent = String(under);
-    if (els.countFull) els.countFull.textContent = String(full);
-    if (els.countOver) els.countOver.textContent = String(over);
+    if (els.countFull)  els.countFull.textContent  = String(full);
+    if (els.countOver)  els.countOver.textContent  = String(over);
 
     const todayCount = (App.state.payments || []).filter((p) => App.isToday?.(p.date)).length;
     if (els.countToday) els.countToday.textContent = String(todayCount);
   }
 
   function renderSummaryCounts() {
-    if (els.studentsCount) els.studentsCount.textContent = String((App.state.students || []).length);
+    // Count unique enrolled students from the register — deduplicate by ADM number
+    const uniqueAdmNos = new Set(
+      (App.state.register || [])
+        .map((r) => String(r.admNo || "").trim())
+        .filter((a) => a !== "")
+    );
+    const registerCount = uniqueAdmNos.size ||
+      (App.state.register || []).filter((r) => String(r.student || "").trim()).length;
+    if (els.studentsCount) els.studentsCount.textContent = String(registerCount);
     if (els.paymentsCount) els.paymentsCount.textContent = String((App.state.payments || []).length);
   }
 
+  // ── Latest receipts ──────────────────────────────────────
   function renderLatestReceipts() {
     if (!els.latestReceiptsTbody) return;
 
@@ -147,7 +180,6 @@ document.addEventListener("DOMContentLoaded", () => {
       .slice(0, 15);
 
     els.latestReceiptsTbody.innerHTML = "";
-
     if (!rows.length) {
       els.latestReceiptsTbody.innerHTML = `<tr><td colspan="8" class="muted">No receipts found.</td></tr>`;
       return;
@@ -160,12 +192,10 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${escapeHtml(p.receiptNo)}</td>
         <td>${escapeHtml(p.student)}</td>
         <td>${escapeHtml(p.grade)}</td>
-        <td>${escapeHtml(p.term)}</td>
-        <td>KES ${money(p.amount)}</td>
+        <td>Term ${escapeHtml(p.term)}</td>
+        <td><strong>KES ${money(p.amount)}</strong></td>
         <td>${escapeHtml(p.method)}</td>
-        <td>
-          <button class="btn btn-primary" type="button">Receipt PDF</button>
-        </td>
+        <td><button class="btn btn-primary" type="button">Receipt PDF</button></td>
       `;
       tr.querySelector("button")?.addEventListener("click", () => App.generateReceiptPDF?.(p));
       els.latestReceiptsTbody.appendChild(tr);
@@ -174,6 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.Animations?.tableRefresh?.("#latestReceiptsTable tbody tr");
   }
 
+  // ── Defaulters ───────────────────────────────────────────
   function renderDefaulters(balanceRows) {
     if (!els.defaultersTbody) return;
 
@@ -183,21 +214,22 @@ document.addEventListener("DOMContentLoaded", () => {
       .slice(0, 20);
 
     els.defaultersTbody.innerHTML = "";
-
     if (!rows.length) {
       els.defaultersTbody.innerHTML = `<tr><td colspan="7" class="muted">No underpaid students for selected filters.</td></tr>`;
       return;
     }
 
     rows.forEach((r) => {
+      const balVal = Number(r.computedBalance ?? r.balance ?? 0);
       const tr = document.createElement("tr");
+      tr.classList.add("status-underpaid");
       tr.innerHTML = `
         <td>${escapeHtml(r.student)}</td>
         <td>${escapeHtml(r.grade)}</td>
-        <td>${escapeHtml(r.term)}</td>
+        <td>Term ${escapeHtml(r.term)}</td>
         <td>KES ${money(r.totalDue)}</td>
         <td>${r.displayTotalPaid || `KES ${money(r.liveTotalPaid ?? r.totalPaid ?? 0)}`}</td>
-        <td>${r.displayComputedBalance || `KES ${money(r.computedBalance ?? r.balance ?? 0)}`}</td>
+        <td class="bal-under">${r.displayComputedBalance || `KES ${money(balVal)}`}</td>
         <td>${Number(r.rate || 0).toFixed(1)}%</td>
       `;
       els.defaultersTbody.appendChild(tr);
@@ -206,6 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.Animations?.tableRefresh?.("#defaultersTable tbody tr");
   }
 
+  // ── Payments table ───────────────────────────────────────
   function renderPaymentsTable() {
     if (!els.paymentsTbody) return;
 
@@ -216,15 +249,14 @@ document.addEventListener("DOMContentLoaded", () => {
       .filter((p) => {
         if (!q) return true;
         return (
-          String(p.student || "").toLowerCase().includes(q) ||
-          String(p.receiptNo || "").toLowerCase().includes(q) ||
-          String(p.admNo || "").toLowerCase().includes(q) ||
-          String(p.ref || "").toLowerCase().includes(q)
+          String(p.student  || "").toLowerCase().includes(q) ||
+          String(p.receiptNo|| "").toLowerCase().includes(q) ||
+          String(p.admNo    || "").toLowerCase().includes(q) ||
+          String(p.ref      || "").toLowerCase().includes(q)
         );
       });
 
     els.paymentsTbody.innerHTML = "";
-
     if (!rows.length) {
       els.paymentsTbody.innerHTML = `<tr><td colspan="10" class="muted">No payments found.</td></tr>`;
       return;
@@ -237,14 +269,12 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${escapeHtml(p.receiptNo)}</td>
         <td>${escapeHtml(p.student)}</td>
         <td>${escapeHtml(p.grade)}</td>
-        <td>${escapeHtml(p.term)}</td>
-        <td>KES ${money(p.amount)}</td>
+        <td>Term ${escapeHtml(p.term)}</td>
+        <td><strong>KES ${money(p.amount)}</strong></td>
         <td>${escapeHtml(p.method)}</td>
         <td>${escapeHtml(p.ref)}</td>
         <td>${escapeHtml(p.receivedBy)}</td>
-        <td>
-          <button class="btn btn-primary" type="button">Receipt PDF</button>
-        </td>
+        <td><button class="btn btn-primary" type="button">Receipt PDF</button></td>
       `;
       tr.querySelector("button")?.addEventListener("click", () => App.generateReceiptPDF?.(p));
       els.paymentsTbody.appendChild(tr);
@@ -253,9 +283,12 @@ document.addEventListener("DOMContentLoaded", () => {
     window.Animations?.tableRefresh?.("#paymentsTable tbody tr");
   }
 
+  // ── Refresh ──────────────────────────────────────────────
   function refreshAll() {
     populateFilters();
-    const students = filteredStudents();
+    updateTermBadge();
+
+    const students    = filteredStudents();
     const balanceRows = App.computeBalances(students);
 
     renderSummaryCounts();
@@ -270,6 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.refreshDashboard = refreshAll;
 
+  // ── Listeners ────────────────────────────────────────────
   els.btnSyncNow?.addEventListener("click", async () => {
     const ok = await App.syncAll({ notifyNewReceipts: true });
     if (ok) {
@@ -280,15 +314,18 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   els.btnExportPayments?.addEventListener("click", () => App.exportPaymentsPdf?.());
+
   els.btnClearSeen?.addEventListener("click", () => {
     localStorage.removeItem(App.CONFIG.SEEN_RECEIPTS_KEY);
     App.toast?.("Done", "Seen receipts reset.");
   });
 
   els.btnApplyFilters?.addEventListener("click", refreshAll);
+
   els.btnResetFilters?.addEventListener("click", () => {
     if (els.filterGrade) els.filterGrade.value = "";
-    if (els.filterTerm) els.filterTerm.value = String(App.CONFIG.DEFAULT_TERM || 1);
+    if (els.filterTerm)  els.filterTerm.value  = "";
+    if (els.filterYear)  els.filterYear.value  = "";
     refreshAll();
   });
 
@@ -296,6 +333,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.Animations?.animateIntro?.();
 
+  // ── Boot ──────────────────────────────────────────────────
   (async () => {
     const ok = await App.syncAll({ notifyNewReceipts: false });
     if (ok) {
