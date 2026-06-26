@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Greenshine Academy • Help & FAQ</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="faq.css" />
+  <script src="session.js"></script>
+</head>
+<body>
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="app-shell">
+
+    <!-- ── Sidebar (rendered by sidebar.js) ─────────────── -->
+    <aside id="appSidebar" class="sidebar"></aside>
+    <div class="sidebar-scrim" id="sidebarScrim"></div>
+
+    <!-- ── Main column ──────────────────────────────────── -->
+    <div class="app-main">
+
+      <header class="topbar">
+        <div class="brand">
+          <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Open menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="brand-text">
+            <h1>Help &amp; FAQ</h1>
+            <p>How the finance dashboard works</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="container">
+
+        <!-- Search + category tabs -->
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <h2>Find an answer</h2>
+              <p>Search a question, or browse by category.</p>
+            </div>
+          </div>
+
+          <div class="row" style="grid-template-columns: 1fr;">
+            <div class="field">
+              <label for="faqSearch">Search</label>
+              <input id="faqSearch" type="text" placeholder="e.g. record a payment, balance, refresh…" autocomplete="off" />
+            </div>
+          </div>
+
+          <div class="faq-tabs" id="faqTabs"></div>
+        </section>
+
+        <!-- Questions -->
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <h2>Questions</h2>
+              <p id="faqResultCount">All questions</p>
+            </div>
+          </div>
+          <div class="faq-list" id="faqList"></div>
+          <div class="faq-empty hidden" id="faqEmpty">
+            No questions match your search. Try a different word.
+          </div>
+        </section>
+
+      </main>
+
+      <footer class="footer">
+        <div class="container footer-inner">
+          <div>Greenshine Academy • Help &amp; FAQ</div>
+          <div>© <span id="yearNow"></span> All rights reserved.</div>
+        </div>
+      </footer>
+
+    </div><!-- /app-main -->
+  </div><!-- /app-shell -->
+
+  <script src="sidebar.js"></script>
+  <script src="faq.js"></script>
+
+  <script>
+    const yearNowEl = document.getElementById("yearNow");
+    if (yearNowEl) yearNowEl.textContent = new Date().getFullYear();
+
+    document.getElementById("sidebarScrim")?.addEventListener("click", () => {
+      document.body.classList.remove("sidebar-open");
+    });
+  </script>
+</body>
+</html>

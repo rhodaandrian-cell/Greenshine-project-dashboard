@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Greenshine Academy • Calculator</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="calculator.css" />
+  <script src="session.js"></script>
+</head>
+<body>
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="app-shell">
+
+    <!-- ── Sidebar (rendered by sidebar.js) ─────────────── -->
+    <aside id="appSidebar" class="sidebar"></aside>
+    <div class="sidebar-scrim" id="sidebarScrim"></div>
+
+    <!-- ── Main column ──────────────────────────────────── -->
+    <div class="app-main">
+
+      <header class="topbar">
+        <div class="brand">
+          <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Open menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="brand-text">
+            <h1>Calculator</h1>
+            <p>Look up a student • See balances • Record fast</p>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="status-pill">
+            <span class="dot"></span>
+            <span id="statusText">Ready</span>
+          </div>
+          <button id="btnSyncNow" class="btn btn-primary" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <!-- React mounts here -->
+      <main class="container">
+        <div id="calcRoot"></div>
+      </main>
+
+      <footer class="footer">
+        <div class="container footer-inner">
+          <div>Greenshine Academy • Student Calculator</div>
+          <div>© <span id="yearNow"></span> All rights reserved.</div>
+        </div>
+      </footer>
+
+    </div><!-- /app-main -->
+  </div><!-- /app-shell -->
+
+  <!-- Core libraries (jsDelivr — same CDN as the rest of the app) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+
+  <!-- App data layer (provides window.App) -->
+  <script src="sidebar.js"></script>
+  <script src="animations.js"></script>
+  <script src="data.js"></script>
+  <script src="truth.js"></script>
+  <script src="balance.js"></script>
+  <script src="pdf.js"></script>
+
+  <!-- React + Babel (jsDelivr, no build step) -->
+  <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.25.6/babel.min.js"></script>
+
+  <!-- The calculator component (JSX, compiled in the browser).
+       data-type="module" tells Babel how to parse it, avoiding the
+       "Cannot use import statement outside a module" false error that
+       Babel-standalone can throw when loading an external .jsx via src. -->
+  <script type="text/babel" data-type="module" data-presets="react" src="calculator.jsx"></script>
+
+  <script>
+    const yearNowEl = document.getElementById("yearNow");
+    if (yearNowEl) yearNowEl.textContent = new Date().getFullYear();
+
+    document.getElementById("sidebarScrim")?.addEventListener("click", () => {
+      document.body.classList.remove("sidebar-open");
+    });
+  </script>
+</body>
+</html>

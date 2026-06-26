@@ -10,6 +10,12 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  // ── Session gate ─────────────────────────────────────────
+  const SESSION_KEY = "greenshine_session_v1";
+  if (sessionStorage.getItem(SESSION_KEY) !== "true") {
+    return;
+  }
+
   const $ = (sel) => document.querySelector(sel);
   const byId = (id) => document.getElementById(id);
 
@@ -33,7 +39,22 @@ document.addEventListener("DOMContentLoaded", () => {
     lastSync:      byId("lastSync"),
 
     statementsTbody: $("#studentStatementsTable tbody"),
+
+    loadingOverlay: byId("loadingOverlay"),
+    loadingSub:     byId("loadingSub"),
   };
+
+  // Reveal the loading overlay now that the session is confirmed.
+  // (It starts with the --pending class, which keeps it invisible.)
+  if (els.loadingOverlay) {
+    els.loadingOverlay.classList.remove("loading-overlay--pending");
+  }
+
+  function hideLoading() {
+    if (!els.loadingOverlay) return;
+    els.loadingOverlay.classList.add("hidden");
+    setTimeout(() => els.loadingOverlay.remove(), 500);
+  }
 
   function money(n)     { return App.money     ? App.money(n)     : Number(n || 0).toLocaleString(); }
   function escapeHtml(v){ return App.escapeHtml ? App.escapeHtml(v) : String(v ?? ""); }
@@ -243,12 +264,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.Animations?.animateIntro?.();
 
+  // ── Boot ──────────────────────────────────────────────────
   (async () => {
-    const ok = await App.syncAll({ notifyNewReceipts: false });
-    if (ok) {
-      window.App?.truthDetectChanges?.();
-      if (els.lastSync) els.lastSync.textContent = App.nowStr?.() || new Date().toLocaleString();
+    try {
+      const ok = await App.syncAll({ notifyNewReceipts: false });
+      if (ok) {
+        window.App?.truthDetectChanges?.();
+        if (els.lastSync) els.lastSync.textContent = App.nowStr?.() || new Date().toLocaleString();
+      } else if (els.loadingSub) {
+        els.loadingSub.textContent = "Couldn't reach Google Sheets — showing last saved data";
+      }
+      refreshAll();
+    } catch (e) {
+      console.error("[students.js] Boot error:", e);
+      if (els.loadingSub) els.loadingSub.textContent = "Something went wrong — loading anyway";
+      refreshAll();
+    } finally {
+      hideLoading();
     }
-    refreshAll();
   })();
 });

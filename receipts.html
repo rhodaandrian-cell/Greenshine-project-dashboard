@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Greenshine Academy • Students</title>
+  <title>Greenshine Academy • Receipts</title>
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="students.css" />
   <script src="session.js"></script>
 </head>
 <body>
@@ -17,7 +16,7 @@
     <div class="loading-box">
       <div class="loading-logo" aria-hidden="true"></div>
       <div class="loading-spinner" aria-hidden="true"></div>
-      <p class="loading-text">Loading students…</p>
+      <p class="loading-text">Loading receipts…</p>
       <p class="loading-sub" id="loadingSub">Loading from Google Sheets</p>
     </div>
   </div>
@@ -37,8 +36,8 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
           <div class="brand-text">
-            <h1>Students</h1>
-            <p>Statements • Receipts • Payment status</p>
+            <h1>Receipts</h1>
+            <p>All recorded payments • Search • Download</p>
           </div>
         </div>
 
@@ -48,121 +47,108 @@
             <span id="statusText">Ready</span>
           </div>
           <button id="btnSyncNow" class="btn btn-primary" type="button">Refresh</button>
-          <button id="btnDownloadAllStatements" class="btn" type="button">Download All Statements PDF</button>
-          <button id="btnDownloadInvalidStudents" class="btn btn-ghost" type="button">Invalid Students PDF</button>
+          <button id="btnExportPayments" class="btn" type="button">Export All PDF</button>
         </div>
       </header>
 
-      <main class="container students-page">
+      <main class="container">
 
+        <!-- Meta strip -->
         <section class="meta-strip">
           <div class="meta-card">
-            <div class="meta-title">Enrolled Students</div>
-            <div class="meta-value" id="studentsCount">0</div>
+            <div class="meta-title">Total Receipts</div>
+            <div class="meta-value" id="totalReceipts">0</div>
           </div>
           <div class="meta-card">
-            <div class="meta-title">Underpaid</div>
-            <div class="meta-value" id="countUnder">0</div>
+            <div class="meta-title">New Since Last Visit</div>
+            <div class="meta-value" id="newReceiptsCount">0</div>
           </div>
           <div class="meta-card">
-            <div class="meta-title">Cleared</div>
-            <div class="meta-value" id="countFull">0</div>
+            <div class="meta-title">Showing</div>
+            <div class="meta-value" id="shownReceipts">0</div>
           </div>
           <div class="meta-card">
-            <div class="meta-title">Overpaid</div>
-            <div class="meta-value" id="countOver">0</div>
+            <div class="meta-title">Total Shown</div>
+            <div class="meta-value" id="shownTotal">KES 0.00</div>
           </div>
         </section>
 
+        <!-- Filters -->
         <section class="card">
           <div class="card-header">
             <div>
-              <h2>Filters</h2>
-              <p>Filter students by grade, term, year, name and payment status.</p>
+              <h2>Find a receipt</h2>
+              <p>Search by student, receipt number, ADM no. or reference. Filter by term.</p>
+            </div>
+            <div class="row-inline">
+              <button id="btnShowHidden" class="btn btn-ghost hidden" type="button">Show hidden</button>
+              <button id="btnMarkAllSeen" class="btn btn-ghost" type="button">Mark all as seen</button>
             </div>
           </div>
 
-          <div class="row" style="grid-template-columns: 1fr 1fr 1fr 1.6fr 1fr;">
+          <div class="row" style="grid-template-columns: 1.6fr 1fr 1fr;">
             <div class="field">
-              <label for="filterGrade">Grade</label>
-              <select id="filterGrade" name="filterGrade">
-                <option value="">All Grades</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="filterTerm">Term</label>
-              <select id="filterTerm" name="filterTerm">
-                <option value="">All Terms</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="filterYear">Year</label>
-              <select id="filterYear" name="filterYear">
-                <option value="">All Years</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="studentSearch">Search student</label>
+              <label for="receiptSearch">Search</label>
               <input
-                id="studentSearch"
-                name="studentSearch"
+                id="receiptSearch"
                 type="text"
-                placeholder="student name or ADM no."
+                placeholder="student / receipt no. / ADM / reference"
                 autocomplete="off"
               />
             </div>
             <div class="field">
-              <label for="studentStatusFilter">Payment Status</label>
-              <select id="studentStatusFilter" name="studentStatusFilter">
-                <option value="ALL">All Students</option>
-                <option value="UNDERPAID">Underpaid</option>
-                <option value="FULLY PAID">Cleared</option>
-                <option value="OVERPAID">Overpaid</option>
-                <option value="IDENTITY INCOMPLETE">Identity Incomplete</option>
+              <label for="filterTerm">Term</label>
+              <select id="filterTerm">
+                <option value="">All Terms</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filterMethod">Method</label>
+              <select id="filterMethod">
+                <option value="">All Methods</option>
+                <option value="M-Pesa">M-Pesa</option>
+                <option value="Cash">Cash</option>
+                <option value="Bank">Bank</option>
+                <option value="Cheque">Cheque</option>
               </select>
             </div>
           </div>
-
-          <div class="row-inline" style="padding: 0 18px 16px;">
-            <button id="btnApplyFilters" class="btn btn-primary" type="button">Apply</button>
-            <button id="btnResetFilters" class="btn btn-ghost"   type="button">Reset</button>
-            <span class="status">Last refresh: <span id="lastSync">—</span></span>
-          </div>
         </section>
 
+        <!-- Receipts table -->
         <section class="card">
           <div class="card-header">
             <div>
-              <h2>Student Statements</h2>
-              <p>Statement PDF and receipt history per student.</p>
+              <h2>All Receipts</h2>
+              <p>Most recent first. New receipts are tagged until you view this page.</p>
             </div>
           </div>
-
           <div class="table-wrap">
-            <table id="studentStatementsTable" class="table">
+            <table id="receiptsTable" class="table">
               <thead>
                 <tr>
+                  <th>Date</th>
+                  <th>Receipt No.</th>
                   <th>Student</th>
-                  <th>ADM No.</th>
                   <th>Grade</th>
                   <th>Term</th>
-                  <th>Bal B/F</th>
-                  <th>Total Paid</th>
-                  <th>School Fees</th>
-                  <th>Balance</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Reference</th>
+                  <th>Received By</th>
+                  <th>PDF</th>
                 </tr>
               </thead>
               <tbody></tbody>
             </table>
           </div>
         </section>
+
       </main>
 
       <footer class="footer">
         <div class="container footer-inner">
-          <div>Greenshine Academy • Student Statements</div>
+          <div>Greenshine Academy • Receipts</div>
           <div>© <span id="yearNow"></span> All rights reserved.</div>
         </div>
       </footer>
@@ -170,35 +156,7 @@
     </div><!-- /app-main -->
   </div><!-- /app-shell -->
 
-  <!-- Receipt modal -->
-  <div id="receiptModal" class="modal hidden">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div>
-          <h2 id="receiptModalTitle">Receipts</h2>
-          <p id="receiptModalMeta"></p>
-        </div>
-        <button id="btnCloseReceiptModal" class="btn btn-ghost" type="button">✕ Close</button>
-      </div>
-      <div class="modal-body">
-        <div class="table-wrap">
-          <table id="receiptModalTable" class="table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Receipt No.</th>
-                <th>Amount</th>
-                <th>Method</th>
-                <th>PDF</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
@@ -210,8 +168,7 @@
   <script src="truth.js"></script>
   <script src="balance.js"></script>
   <script src="pdf.js"></script>
-  <script src="records.js"></script>
-  <script src="students.js"></script>
+  <script src="receipts.js"></script>
 
   <script>
     const yearNowEl = document.getElementById("yearNow");

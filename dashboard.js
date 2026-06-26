@@ -10,8 +10,21 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  // ── Session gate ─────────────────────────────────────────
+  // session.js (in the <head>) already redirects to login.html when there is
+  // no active session, but window.location.replace() does NOT halt this script.
+  // We bail out so that, pre-login, we never fetch data and never flash the overlay.
+  const SESSION_KEY = "greenshine_session_v1";
+  if (sessionStorage.getItem(SESSION_KEY) !== "true") {
+    return;
+  }
+
   const $ = (sel) => document.querySelector(sel);
   const byId = (id) => document.getElementById(id);
+
+  // The term the dashboard opens on. Pulled from CONFIG.CURRENT_TERM (set in
+  // data.js, updated each school term). Falls back to 1 if missing.
+  const CURRENT_TERM = Number(App.CONFIG?.CURRENT_TERM) || 1;
 
   const els = {
     btnSyncNow:       byId("btnSyncNow"),
@@ -45,7 +58,15 @@ document.addEventListener("DOMContentLoaded", () => {
     latestReceiptsTbody: $("#latestReceiptsTable tbody"),
     defaultersTbody:     $("#defaultersTable tbody"),
     paymentsTbody:       $("#paymentsTable tbody"),
+
+    loadingOverlay:   byId("loadingOverlay"),
+    loadingSub:       byId("loadingSub"),
   };
+
+  // ── Reveal the loading overlay now that the session is confirmed ──
+  if (els.loadingOverlay) {
+    els.loadingOverlay.classList.remove("loading-overlay--pending");
+  }
 
   function money(n) {
     return App.money ? App.money(n) : Number(n || 0).toLocaleString();
@@ -72,9 +93,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const { grade, term, year } = currentFilters();
     const parts = [];
     if (term  !== null) parts.push(`Term ${term}`);
+    else                parts.push("ALL TERMS");
     if (year  !== null) parts.push(String(year));
     if (grade !== null) parts.push(`Grade ${grade}`);
-    els.currentTermBadge.textContent = parts.length ? parts.join(" • ") : "ALL TERMS";
+    els.currentTermBadge.textContent = parts.join(" • ");
   }
 
   // ── Filters ──────────────────────────────────────────────
@@ -91,6 +113,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (els.filterTerm) {
+      // Preserve an existing user choice; otherwise default to the current term.
+      const hadValue = els.filterTerm.dataset.userSet === "1";
       const cur = els.filterTerm.value;
       els.filterTerm.innerHTML = `<option value="">All Terms</option>`;
       (App.CONFIG.TERMS || []).forEach((t) => {
@@ -98,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
         o.value = String(t); o.textContent = `Term ${t}`;
         els.filterTerm.appendChild(o);
       });
-      els.filterTerm.value = cur !== undefined ? cur : String(App.CONFIG.DEFAULT_TERM ?? "");
+      els.filterTerm.value = hadValue ? cur : String(CURRENT_TERM);
     }
 
     if (els.filterYear) {
@@ -204,9 +228,12 @@ document.addEventListener("DOMContentLoaded", () => {
     window.Animations?.tableRefresh?.("#latestReceiptsTable tbody tr");
   }
 
-  // ── Defaulters ───────────────────────────────────────────
+  // ── Defaulters (per selected term) ───────────────────────
   function renderDefaulters(balanceRows) {
     if (!els.defaultersTbody) return;
+
+    const { term } = currentFilters();
+    const termLabel = term !== null ? `Term ${term}` : "all terms";
 
     const rows = [...balanceRows]
       .filter((r) => r.hasIdentity !== false && Number(r.computedBalance ?? r.balance ?? 0) > 0)
@@ -215,7 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     els.defaultersTbody.innerHTML = "";
     if (!rows.length) {
-      els.defaultersTbody.innerHTML = `<tr><td colspan="7" class="muted">No underpaid students for selected filters.</td></tr>`;
+      els.defaultersTbody.innerHTML = `<tr><td colspan="7" class="muted">No underpaid students for ${termLabel}.</td></tr>`;
       return;
     }
 
@@ -303,6 +330,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.refreshDashboard = refreshAll;
 
+  // ── Loading overlay helper ───────────────────────────────
+  function hideLoading() {
+    if (!els.loadingOverlay) return;
+    els.loadingOverlay.classList.add("hidden");
+    setTimeout(() => els.loadingOverlay.remove(), 500);
+  }
+
   // ── Listeners ────────────────────────────────────────────
   els.btnSyncNow?.addEventListener("click", async () => {
     const ok = await App.syncAll({ notifyNewReceipts: true });
@@ -323,11 +357,23 @@ document.addEventListener("DOMContentLoaded", () => {
   els.btnApplyFilters?.addEventListener("click", refreshAll);
 
   els.btnResetFilters?.addEventListener("click", () => {
+    // Reset returns to the current-term default, not All Terms.
     if (els.filterGrade) els.filterGrade.value = "";
-    if (els.filterTerm)  els.filterTerm.value  = "";
+    if (els.filterTerm) {
+      els.filterTerm.value = String(CURRENT_TERM);
+      els.filterTerm.dataset.userSet = "1";
+    }
     if (els.filterYear)  els.filterYear.value  = "";
     refreshAll();
   });
+
+  // Mark the term select as user-set the moment she changes it, so polling /
+  // re-render never snaps it back to the current-term default.
+  els.filterTerm?.addEventListener("change", () => {
+    els.filterTerm.dataset.userSet = "1";
+  });
+  els.filterGrade?.addEventListener("change", () => {});
+  els.filterYear?.addEventListener("change", () => {});
 
   els.receiptSearch?.addEventListener("input", renderPaymentsTable);
 
@@ -335,12 +381,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Boot ──────────────────────────────────────────────────
   (async () => {
-    const ok = await App.syncAll({ notifyNewReceipts: false });
-    if (ok) {
-      window.App?.truthDetectChanges?.();
-      if (els.lastSync) els.lastSync.textContent = App.nowStr?.() || new Date().toLocaleString();
+    try {
+      const ok = await App.syncAll({ notifyNewReceipts: false });
+      if (ok) {
+        window.App?.truthDetectChanges?.();
+        if (els.lastSync) els.lastSync.textContent = App.nowStr?.() || new Date().toLocaleString();
+      } else if (els.loadingSub) {
+        els.loadingSub.textContent = "Couldn't reach Google Sheets — showing last saved data";
+      }
+      refreshAll();
+    } catch (e) {
+      console.error("[dashboard.js] Boot error:", e);
+      if (els.loadingSub) els.loadingSub.textContent = "Something went wrong — loading anyway";
+      refreshAll();
+    } finally {
+      hideLoading();
     }
-    refreshAll();
 
     setInterval(async () => {
       const ok2 = await App.syncAll({ notifyNewReceipts: true });

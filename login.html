@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Greenshine Academy • Sign In</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="login.css" />
+</head>
+<body>
+
+  <div class="login-wrap">
+    <div class="login-card">
+
+      <!-- Brand -->
+      <div class="login-logo">
+        <div class="logo-mark" aria-hidden="true"></div>
+        <div class="login-logo-text">
+          <h1>Greenshine Academy</h1>
+          <p>Finance Management System</p>
+        </div>
+      </div>
+
+      <!-- Heading -->
+      <h2 class="login-title">Welcome back</h2>
+      <p class="login-subtitle">Sign in to access the finance dashboard.</p>
+
+      <!-- Error -->
+      <div class="login-error" id="loginError">
+        <span aria-hidden="true">⚠</span>
+        <span id="loginErrorMsg">Invalid username or password.</span>
+      </div>
+
+      <!-- Username -->
+      <div class="field">
+        <label for="loginUser">Username</label>
+        <input
+          id="loginUser"
+          type="text"
+          placeholder="Enter your username"
+          autocomplete="username"
+          autofocus
+        />
+      </div>
+
+      <!-- Password -->
+      <div class="field">
+        <label for="loginPass">Password</label>
+        <div class="pw-wrap">
+          <input
+            id="loginPass"
+            type="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+          />
+          <button class="pw-toggle" id="btnTogglePw" type="button" title="Show or hide password" aria-label="Toggle password visibility">👁</button>
+        </div>
+      </div>
+
+      <button class="btn-login" id="btnLogin" type="button">Sign In</button>
+
+      <div class="login-footer">
+        &copy; <span id="yr"></span> Greenshine Academy &mdash; Admin Portal
+      </div>
+
+    </div>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>

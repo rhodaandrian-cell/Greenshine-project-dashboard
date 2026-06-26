@@ -1,0 +1,113 @@
+/* faq.css */
+
+/* ── Category tabs ───────────────────────────────────── */
+.faq-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 18px 16px;
+}
+
+.faq-tab {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+
+.faq-tab:hover { background: rgba(255,255,255,.09); }
+
+.faq-tab.is-active {
+  background: rgba(29,185,84,.18);
+  border-color: rgba(29,185,84,.40);
+  color: var(--green2);
+}
+
+/* ── Question list ───────────────────────────────────── */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 18px;
+}
+
+.faq-item {
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  background: var(--panel2);
+  overflow: hidden;
+  transition: border-color .15s ease;
+}
+
+.faq-item:hover { border-color: rgba(255,255,255,.18); }
+.faq-item.is-open { border-color: rgba(29,185,84,.35); }
+
+.faq-q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.faq-q-text { line-height: 1.4; }
+
+.faq-chevron {
+  flex-shrink: 0;
+  font-size: 18px;
+  color: var(--muted);
+  transition: transform .2s ease;
+}
+
+.faq-item.is-open .faq-chevron {
+  transform: rotate(180deg);
+  color: var(--green2);
+}
+
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .25s ease;
+}
+
+.faq-a p {
+  margin: 0;
+  padding: 0 16px 16px;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+/* Search highlight */
+.faq-mark {
+  background: rgba(29,185,84,.30);
+  color: var(--text);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+/* Empty state */
+.faq-empty {
+  padding: 28px 20px;
+  margin: 0 16px 18px;
+  border: 1px dashed rgba(255,255,255,.14);
+  border-radius: 18px;
+  text-align: center;
+  color: var(--muted);
+  background: rgba(255,255,255,.02);
+}
+
+.faq-empty.hidden { display: none; }

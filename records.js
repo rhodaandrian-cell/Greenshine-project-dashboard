@@ -34,6 +34,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const receiptModalMeta = byId("receiptModalMeta");
   const receiptModalTbody = $("#receiptModalTable tbody");
 
+  // Receipt-choice modal (added in index.html). Optional — guarded everywhere.
+  const choiceModal      = byId("receiptChoiceModal");
+  const choiceMeta       = byId("receiptChoiceMeta");
+  const btnChoiceTermNow = byId("btnChoiceTermNow");
+  const btnChoiceFull    = byId("btnChoiceFull");
+  const btnChoicePayOnly = byId("btnChoicePayOnly");
+  const btnChoiceSkip    = byId("btnChoiceSkip");
+  const btnCloseChoice   = byId("btnCloseChoiceModal");
+
   function money(n) {
     return App.money ? App.money(n) : Number(n || 0).toLocaleString();
   }
@@ -141,10 +150,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function fillStaffDropdown() {
+    if (!payReceivedBy || payReceivedBy.tagName !== "SELECT") return;
+    const cur = payReceivedBy.value;
+    payReceivedBy.innerHTML = `<option value="">Select staff…</option>`;
+    (App.CONFIG.STAFF || []).forEach((name) => {
+      const o = document.createElement("option");
+      o.value = name;
+      o.textContent = name;
+      payReceivedBy.appendChild(o);
+    });
+    payReceivedBy.value = cur || "";
+  }
+
   function openPaymentModal() {
     if (!paymentModal) return;
 
     fillStudentDatalist();
+    fillStaffDropdown();
 
     if (payStatus) payStatus.textContent = "";
     if (payStudent) payStudent.value = "";
@@ -189,6 +212,64 @@ document.addEventListener("DOMContentLoaded", () => {
     return text;
   }
 
+  // ── Receipt choice (after a successful save) ──────────────
+  // The payment is ALREADY saved by the time this runs. The choice only
+  // determines which PDF to generate; dismissing it changes nothing about
+  // the recorded payment.
+  let pendingChoicePayment = null;
+
+  function offerReceiptChoice(payment) {
+    pendingChoicePayment = payment;
+
+    // If the choice modal isn't present on this page, fall back to the
+    // existing default (the term receipt) so behaviour never regresses.
+    if (!choiceModal) {
+      App.generateReceiptPDF?.(payment);
+      return;
+    }
+
+    if (choiceMeta) {
+      choiceMeta.textContent =
+        `${payment.student} • ADM ${payment.admNo || "—"} • Term ${payment.term} • KES ${money(payment.amount)}`;
+    }
+    openAnimatedModal(choiceModal);
+  }
+
+  function closeChoice() {
+    closeAnimatedModal(choiceModal);
+    pendingChoicePayment = null;
+  }
+
+  btnChoicePayOnly?.addEventListener("click", () => {
+    if (pendingChoicePayment) App.generatePaymentOnlyPDF?.(pendingChoicePayment);
+    closeChoice();
+  });
+
+  btnChoiceTermNow?.addEventListener("click", () => {
+    if (pendingChoicePayment) App.generateReceiptPDF?.(pendingChoicePayment);
+    closeChoice();
+  });
+
+  btnChoiceFull?.addEventListener("click", () => {
+    if (pendingChoicePayment) {
+      App.generateStudentStatementPDF?.({
+        admNo:   pendingChoicePayment.admNo,
+        student: pendingChoicePayment.student,
+        grade:   pendingChoicePayment.grade,
+        year:    pendingChoicePayment.year,
+        term:    pendingChoicePayment.term,
+      });
+    }
+    closeChoice();
+  });
+
+  btnChoiceSkip?.addEventListener("click", closeChoice);
+  btnCloseChoice?.addEventListener("click", closeChoice);
+  choiceModal?.addEventListener("click", (e) => {
+    if (e.target === choiceModal) closeChoice();
+  });
+
+  // ── Receipts history modal (unchanged) ────────────────────
   function openReceiptsModal(row) {
     if (!receiptModal || !receiptModalTbody || !row) return;
 
@@ -279,7 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (payStatus) payStatus.textContent = "Saving…";
 
-      await saveReceiptToSheet({
+      const payment = {
         admNo,
         student,
         grade,
@@ -291,18 +372,25 @@ document.addEventListener("DOMContentLoaded", () => {
         method,
         ref,
         receivedBy,
-      });
+      };
 
-      if (payStatus) payStatus.textContent = "Saved ✅ Syncing…";
+      await saveReceiptToSheet(payment);
+
+      if (payStatus) payStatus.textContent = "Saved ✅ Refreshing…";
 
       const ok = await App.syncAll({ notifyNewReceipts: false });
 
       if (ok) {
+        window.App?.truthDetectChanges?.();
         window.refreshDashboard?.();
       }
 
       if (payStatus) payStatus.textContent = "Done ✅";
-      setTimeout(closePaymentModal, 500);
+
+      // Close the entry modal, then ask what document to print. The payment
+      // is already saved at this point — the choice is purely about the PDF.
+      closePaymentModal();
+      setTimeout(() => offerReceiptChoice(payment), 350);
     } catch (err) {
       console.error(err);
       if (payStatus) payStatus.textContent = "Failed ❌";
@@ -315,6 +403,7 @@ document.addEventListener("DOMContentLoaded", () => {
     closePaymentModal,
     openReceiptsModal,
     closeReceiptsModal,
+    offerReceiptChoice,
     fillStudentDatalist,
     lookupRegisteredStudentByName,
   };

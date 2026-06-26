@@ -2,36 +2,55 @@
 (() => {
   const Animations = (window.Animations = window.Animations || {});
 
+  // Returns true only if at least one element matches the selector on this page.
+  // Used to skip GSAP calls (and their "target not found" warnings) on pages
+  // that don't contain the element being animated.
+  function exists(selector) {
+    try {
+      return document.querySelector(selector) !== null;
+    } catch {
+      return false;
+    }
+  }
+
   Animations.animateIntro = () => {
     if (!window.gsap) return;
 
-    gsap.fromTo(
-      ".topbar",
-      { y: -14, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }
-    );
+    if (exists(".topbar")) {
+      gsap.fromTo(
+        ".topbar",
+        { y: -14, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }
+      );
+    }
 
-    gsap.fromTo(
-      ".meta-card",
-      { y: 14, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.45, stagger: 0.06, delay: 0.05, ease: "power2.out" }
-    );
+    if (exists(".meta-card")) {
+      gsap.fromTo(
+        ".meta-card",
+        { y: 14, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.45, stagger: 0.06, delay: 0.05, ease: "power2.out" }
+      );
+    }
 
-    gsap.fromTo(
-      ".kpi",
-      { y: 16, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.45, stagger: 0.06, delay: 0.1, ease: "power2.out" }
-    );
+    if (exists(".kpi")) {
+      gsap.fromTo(
+        ".kpi",
+        { y: 16, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.45, stagger: 0.06, delay: 0.1, ease: "power2.out" }
+      );
+    }
 
-    gsap.fromTo(
-      ".card",
-      { y: 10, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.35, stagger: 0.05, delay: 0.12, ease: "power2.out" }
-    );
+    if (exists(".card")) {
+      gsap.fromTo(
+        ".card",
+        { y: 10, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.35, stagger: 0.05, delay: 0.12, ease: "power2.out" }
+      );
+    }
   };
 
   Animations.pulseKpis = () => {
-    if (!window.gsap) return;
+    if (!window.gsap || !exists(".kpi")) return;
 
     gsap.fromTo(
       ".kpi",
@@ -110,6 +129,7 @@
       ? document.querySelectorAll(selector)
       : selector;
 
+    // Skip silently if nothing matches — avoids GSAP "target not found".
     if (!targets || !targets.length) return;
 
     gsap.fromTo(

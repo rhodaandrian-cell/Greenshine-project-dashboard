@@ -13,10 +13,31 @@
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vSedPYB_UrkW4WVhO39C62ENGY96D5sBi9d30axlSlegxgguL_KfgZiyLGUcNqjE7zMDZT-aMeA0f6p/pub?gid=841135586&single=true&output=csv",
 
     POLL_MS: 15000,
-    DEFAULT_TERM: "",              // "" = All Terms by default
+
+    // ── Current school term ──────────────────────────────────
+    // This is the term the dashboard opens on by default. The dashboard
+    // computes KPIs, charts and the defaulters list for THIS term only, so a
+    // student who has cleared an earlier term but has no row yet for a later
+    // term is never wrongly shown as owing.
+    //
+    // IMPORTANT: update this number when the school moves to a new term.
+    //   Term 1 → 1   •   Term 2 → 2   •   Term 3 → 3
+    CURRENT_TERM: 2,
+
+    DEFAULT_TERM: "",              // "" = All Terms (used by the Students page)
     GRADES: [0, 1, 2, 3, 4, 5, 6],
     TERMS: [1, 2, 3],
     SEEN_RECEIPTS_KEY: "greenshine_seen_receipts_v1",
+
+    // ── Staff who can receive payments ───────────────────────
+    // Used to populate the "Received By" dropdown in the Record Payment
+    // modal and the Calculator's quick-record. Edit this list to add or
+    // remove staff; both places update automatically.
+    STAFF: [
+      "TR JANE", "TR GITONGA", "TR SAMUEL", "TR BONIFACE", "TR JEDIDAH",
+      "TR ANNE", "TR WAMBUI", "TR JOY", "TR FAITH", "TR SUSAN",
+      "TR LOYCE", "TR MAGRET", "TR LINET", "TR TRACY", "ADMIN",
+    ],
 
     API_URL:
       "https://script.google.com/macros/s/AKfycbz53N8bmyGiVm89K46fzRiVLWqpYhhvGLPhj2I5c8uYK46RAnHOPctnpMYmvtsHNxIADQ/exec",
@@ -294,7 +315,7 @@
   // ── Sync ─────────────────────────────────────────────────
   App.syncAll = async ({ notifyNewReceipts = true } = {}) => {
     try {
-      App.setStatus("Syncing from Google Sheets…");
+      App.setStatus("Refreshing from Google Sheets…");
 
       const [registerRows, financeRows, paymentRows] = await Promise.all([
         App.fetchCsvAsRows(App.CONFIG.REGISTER_CSV_URL),
@@ -310,33 +331,18 @@
       const lastSyncEl = document.getElementById("lastSync");
       if (lastSyncEl) lastSyncEl.textContent = App.nowStr();
 
-      App.setStatus("Sync successful ✅", "ok");
+      App.setStatus("Refresh successful ✅", "ok");
 
-      if (notifyNewReceipts) {
-        const seen   = App.loadSeenSet();
-        const sorted = App.state.payments
-          .slice()
-          .sort((a, b) => (App.parseLooseDate(a.date)?.getTime() || 0) < (App.parseLooseDate(b.date)?.getTime() || 0) ? 1 : -1);
-
-        let shown = 0;
-        for (const p of sorted) {
-          if (!p.receiptNo || seen.has(p.receiptNo)) continue;
-          seen.add(p.receiptNo);
-          App.toast(
-            "Receipt ready for download",
-            `${p.receiptNo} • ${p.student} • KES ${App.money(p.amount)}`,
-            { onDownload: () => App.generateReceiptPDF?.(p) }
-          );
-          shown++;
-          if (shown >= 3) break;
-        }
-        App.saveSeenSet(seen);
-      }
+      // NOTE: the old per-receipt toast storm has been removed. New receipts are
+      // still recorded in the Finance Alerts (Messages) page via truthDetectChanges,
+      // and will be surfaced via a quiet badge / the Receipts page in later steps.
+      // The notifyNewReceipts flag is kept for backward compatibility but no longer
+      // pops toasts.
 
       return true;
     } catch (e) {
       console.warn(e);
-      App.setStatus("Sync failed. Ensure the sheets are published to web as CSV.", "error");
+      App.setStatus("Refresh failed. Ensure the sheets are published to web as CSV.", "error");
       return false;
     }
   };

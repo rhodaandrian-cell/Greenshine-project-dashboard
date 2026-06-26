@@ -295,8 +295,51 @@
   }
 
   // ════════════════════════════════════════════════════════
-  // RECEIPT PDF  (single payment receipt — unchanged logic,
-  //               but now shows term balance clearly)
+  // PAYMENT-ONLY RECEIPT  (NEW)
+  // A lightweight receipt showing ONLY the single payment that
+  // was just made — no term account summary, no payment history.
+  // Used when the director chooses "Payment only" after saving.
+  // ════════════════════════════════════════════════════════
+
+  App.generatePaymentOnlyPDF = (p) => {
+    if (!p) return;
+    const JsPDF = ensurePdfReady_();
+    if (!JsPDF) return;
+
+    const doc = new JsPDF();
+
+    pdfHeader_(doc, "Payment Receipt", `Generated: ${nowStr_()}`);
+
+    // Amount received — prominent
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(20, 20, 20);
+    doc.text("AMOUNT RECEIVED", 14, 50);
+    doc.setTextColor(0, 120, 50);
+    doc.setFontSize(30);
+    doc.text(`KES ${money_(p.amount)}`, 14, 64);
+    doc.setTextColor(20, 20, 20);
+
+    // Payment details only
+    infoBlock_(doc, "PAYMENT DETAILS", [
+      ["Receipt No",  p.receiptNo  || "—"],
+      ["Date",        p.date       || "—"],
+      ["ADM NO.",     p.admNo      || "—"],
+      ["Student",     p.student    || "—"],
+      ["Grade",       String(p.grade || "—")],
+      ["Term",        `Term ${p.term || "—"}`],
+      ["Method",      p.method     || "N/A"],
+      ["Reference",   p.ref        || "N/A"],
+      ["Received By", p.receivedBy || "N/A"],
+    ], 14, 78, 110);
+
+    drawApproval_(doc, `Recorded: ${p.recordedAt || p.date || "—"}`, 250);
+
+    doc.save(`PaymentReceipt_${p.receiptNo || "greenshine"}_${p.student || "Student"}.pdf`);
+  };
+
+  // ════════════════════════════════════════════════════════
+  // RECEIPT PDF  (this term — payment + term account + history)
   // ════════════════════════════════════════════════════════
 
   App.generateReceiptPDF = (p) => {
@@ -386,9 +429,7 @@
   };
 
   // ════════════════════════════════════════════════════════
-  // STUDENT STATEMENT PDF
-  // Shows Term 1, Term 2, Term 3 sections each with their
-  // own finance summary + receipts, then a grand total.
+  // STUDENT STATEMENT PDF  (all terms)
   // ════════════════════════════════════════════════════════
 
   function buildStatement_(doc, studentRow) {
@@ -397,12 +438,10 @@
     const grade      = studentRow.grade    || 0;
     const year       = studentRow.year     || 0;
 
-    // Discover all terms this student has data for
     const terms = getStudentTerms_(admNo, student, grade, year);
 
     pdfHeader_(doc, "Student Fee Statement", `Generated: ${nowStr_()}`);
 
-    // Student details block
     infoBlock_(doc, "STUDENT DETAILS", [
       ["Student",  student        || "—"],
       ["ADM NO.",  admNo          || "—"],
@@ -411,7 +450,6 @@
       ["Terms",    terms.length ? terms.map((t) => `Term ${t}`).join(", ") : "—"],
     ], 14, 38, 90);
 
-    // Grand totals (computed across all terms)
     let grandDue  = 0;
     let grandPaid = 0;
     let grandBal  = 0;
@@ -429,7 +467,6 @@
       return { t, finRow, fees, bfwd, paid, due, bal };
     });
 
-    // Grand summary block
     const grandBalColor = grandBal > 0 ? [200, 50, 50] : grandBal < 0 ? [20, 140, 70] : [20, 20, 20];
     const grandBalLabel = grandBal < 0
       ? `+KES ${money_(Math.abs(grandBal))} (OVERPAID)`
@@ -445,19 +482,15 @@
 
     let y = 98;
 
-    // Draw each term section
-    termData.forEach(({ t, finRow, fees, bfwd, paid, due, bal }) => {
-      // Check if we need a new page
+    termData.forEach(({ t, finRow }) => {
       if (y > 220) {
         doc.addPage();
         y = 20;
       }
-
       const receipts = getReceiptsForTerm_(admNo, student, grade, year, t);
       y = drawTermSection_(doc, y, t, finRow, receipts);
     });
 
-    // If no terms found, show a note
     if (!terms.length) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
@@ -466,7 +499,6 @@
       y += 20;
     }
 
-    // Grand total footer bar
     if (y > 250) { doc.addPage(); y = 20; }
 
     doc.setFillColor(22, 27, 38);

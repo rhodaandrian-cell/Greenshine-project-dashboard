@@ -7,88 +7,125 @@
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="messages.css" />
+  <script src="session.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="logo-mark" aria-hidden="true"></div>
-      <div class="brand-text">
-        <h1>Greenshine Academy</h1>
-        <p>Finance Alerts • Audit Log • Backend & Frontend Activity</p>
-      </div>
-    </div>
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-    <div class="topbar-actions">
-      <a href="index.html" class="btn btn-ghost">← Back to Dashboard</a>
-      <button id="btnMarkAllRead" class="btn" type="button">Mark All Read</button>
-      <button id="btnClearAllMessages" class="btn btn-ghost" type="button">Clear All</button>
-    </div>
-  </header>
+  <div class="app-shell">
 
-  <main class="container messages-page">
-    <section class="meta-strip">
-      <div class="meta-card">
-        <div class="meta-title">Unread</div>
-        <div class="meta-value" id="unreadCount">0</div>
-      </div>
+    <!-- ── Sidebar (rendered by sidebar.js) ─────────────── -->
+    <aside id="appSidebar" class="sidebar"></aside>
+    <div class="sidebar-scrim" id="sidebarScrim"></div>
 
-      <div class="meta-card">
-        <div class="meta-title">Total Alerts</div>
-        <div class="meta-value" id="totalMessagesCount">0</div>
-      </div>
+    <!-- ── Main column ──────────────────────────────────── -->
+    <div class="app-main">
 
-      <div class="meta-card">
-        <div class="meta-title">View</div>
-        <div class="meta-value"><span class="badge">AUDIT LOG</span></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-header">
-        <h2>Filter Alerts</h2>
-        <p>Search and filter finance alerts without affecting the dashboard.</p>
-      </div>
-
-      <div class="row">
-        <div class="field">
-          <label for="messageSearch">Search</label>
-          <input
-            id="messageSearch"
-            type="text"
-            placeholder="student / ADM / receipt / type..."
-            autocomplete="off"
-          />
+      <header class="topbar">
+        <div class="brand">
+          <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="Open menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="brand-text">
+            <h1>Finance Alerts</h1>
+            <p>Audit log • Backend &amp; frontend activity</p>
+          </div>
         </div>
 
-        <div class="field">
-          <label for="messageFilter">Category</label>
-          <select id="messageFilter">
-            <option value="ALL">All Alerts</option>
-            <option value="UNREAD">Unread Only</option>
-            <option value="new-student">New Students</option>
-            <option value="new-receipt">New Receipts</option>
-            <option value="finance-without-receipt">Finance Updated Without Receipt</option>
-            <option value="finance-undefined">Undefined Finance Fields</option>
-            <option value="identity-incomplete">Identity Incomplete</option>
-          </select>
+        <div class="topbar-actions">
+          <button id="btnMarkAllRead" class="btn" type="button">Mark All Read</button>
+          <button id="btnClearAllMessages" class="btn btn-ghost" type="button">Clear All</button>
         </div>
-      </div>
-    </section>
+      </header>
 
-    <section class="card">
-      <div class="card-header">
-        <h2>Finance Alerts</h2>
-        <p>Latest audit messages from truth detection.</p>
-      </div>
+      <main class="container messages-page">
+        <section class="meta-strip">
+          <div class="meta-card">
+            <div class="meta-title">Unread</div>
+            <div class="meta-value" id="unreadCount">0</div>
+          </div>
 
-      <div id="messagesEmpty" class="messages-empty hidden">
-        No alerts found.
-      </div>
+          <div class="meta-card">
+            <div class="meta-title">Total Alerts</div>
+            <div class="meta-value" id="totalMessagesCount">0</div>
+          </div>
 
-      <div id="messagesList" class="messages-list"></div>
-    </section>
-  </main>
+          <div class="meta-card">
+            <div class="meta-title">View</div>
+            <div class="meta-value"><span class="badge">AUDIT LOG</span></div>
+          </div>
+        </section>
 
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <h2>Filter Alerts</h2>
+              <p>Search and filter finance alerts without affecting the dashboard.</p>
+            </div>
+          </div>
+
+          <div class="row" style="grid-template-columns: 1.6fr 1fr;">
+            <div class="field">
+              <label for="messageSearch">Search</label>
+              <input
+                id="messageSearch"
+                type="text"
+                placeholder="student / ADM / receipt / type..."
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="field">
+              <label for="messageFilter">Category</label>
+              <select id="messageFilter">
+                <option value="ALL">All Alerts</option>
+                <option value="UNREAD">Unread Only</option>
+                <option value="new-student">New Students</option>
+                <option value="new-receipt">New Receipts</option>
+                <option value="finance-without-receipt">Finance Updated Without Receipt</option>
+                <option value="finance-undefined">Undefined Finance Fields</option>
+                <option value="identity-incomplete">Identity Incomplete</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <h2>Finance Alerts</h2>
+              <p>Latest audit messages from truth detection.</p>
+            </div>
+          </div>
+
+          <div id="messagesEmpty" class="messages-empty hidden">
+            No alerts found.
+          </div>
+
+          <div id="messagesList" class="messages-list"></div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="container footer-inner">
+          <div>Greenshine Academy • Finance Alerts</div>
+          <div>© <span id="yearNow"></span> All rights reserved.</div>
+        </div>
+      </footer>
+
+    </div><!-- /app-main -->
+  </div><!-- /app-shell -->
+
+  <script src="sidebar.js"></script>
   <script src="messages.js"></script>
+
+  <script>
+    const yearNowEl = document.getElementById("yearNow");
+    if (yearNowEl) yearNowEl.textContent = new Date().getFullYear();
+
+    document.getElementById("sidebarScrim")?.addEventListener("click", () => {
+      document.body.classList.remove("sidebar-open");
+    });
+  </script>
 </body>
 </html>
