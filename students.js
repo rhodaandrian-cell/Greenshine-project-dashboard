@@ -39,22 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
     lastSync:      byId("lastSync"),
 
     statementsTbody: $("#studentStatementsTable tbody"),
-
-    loadingOverlay: byId("loadingOverlay"),
-    loadingSub:     byId("loadingSub"),
   };
-
-  // Reveal the loading overlay now that the session is confirmed.
-  // (It starts with the --pending class, which keeps it invisible.)
-  if (els.loadingOverlay) {
-    els.loadingOverlay.classList.remove("loading-overlay--pending");
-  }
-
-  function hideLoading() {
-    if (!els.loadingOverlay) return;
-    els.loadingOverlay.classList.add("hidden");
-    setTimeout(() => els.loadingOverlay.remove(), 500);
-  }
 
   function money(n)     { return App.money     ? App.money(n)     : Number(n || 0).toLocaleString(); }
   function escapeHtml(v){ return App.escapeHtml ? App.escapeHtml(v) : String(v ?? ""); }
@@ -229,12 +214,14 @@ document.addEventListener("DOMContentLoaded", () => {
   window.refreshStudentsPage = refreshAll;
 
   els.btnSyncNow?.addEventListener("click", async () => {
+    App.skeleton?.start?.();
     const ok = await App.syncAll({ notifyNewReceipts: true });
     if (ok) {
       window.App?.truthDetectChanges?.();
       if (els.lastSync) els.lastSync.textContent = App.nowStr?.() || new Date().toLocaleString();
       refreshAll();
     }
+    App.skeleton?.stop?.();
   });
 
   els.btnApplyFilters?.addEventListener("click", refreshAll);
@@ -265,22 +252,24 @@ document.addEventListener("DOMContentLoaded", () => {
   window.Animations?.animateIntro?.();
 
   // ── Boot ──────────────────────────────────────────────────
+  // Shell shows instantly; the statements table shimmers while data loads.
+  App.skeleton?.start?.();
+  App.skeleton?.metaValues?.();
+  App.skeleton?.tableRows?.("#studentStatementsTable tbody", 10, 7);
+
   (async () => {
     try {
       const ok = await App.syncAll({ notifyNewReceipts: false });
       if (ok) {
         window.App?.truthDetectChanges?.();
         if (els.lastSync) els.lastSync.textContent = App.nowStr?.() || new Date().toLocaleString();
-      } else if (els.loadingSub) {
-        els.loadingSub.textContent = "Couldn't reach Google Sheets — showing last saved data";
       }
       refreshAll();
     } catch (e) {
       console.error("[students.js] Boot error:", e);
-      if (els.loadingSub) els.loadingSub.textContent = "Something went wrong — loading anyway";
       refreshAll();
     } finally {
-      hideLoading();
+      App.skeleton?.stop?.();
     }
   })();
 });

@@ -34,22 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     lastSync:         byId("lastSync"),
 
-    loadingOverlay:   byId("loadingOverlay"),
-    loadingSub:       byId("loadingSub"),
-
     tbody:            $("#receiptsTable tbody"),
   };
-
-  // Reveal the loading overlay now that the session is confirmed.
-  if (els.loadingOverlay) {
-    els.loadingOverlay.classList.remove("loading-overlay--pending");
-  }
-
-  function hideLoading() {
-    if (!els.loadingOverlay) return;
-    els.loadingOverlay.classList.add("hidden");
-    setTimeout(() => els.loadingOverlay.remove(), 500);
-  }
 
   function money(n)      { return App.money ? App.money(n) : Number(n || 0).toLocaleString(); }
   function escapeHtml(v) { return App.escapeHtml ? App.escapeHtml(v) : String(v ?? ""); }
@@ -235,11 +221,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Listeners ────────────────────────────────────────────
   els.btnSyncNow?.addEventListener("click", async () => {
+    App.skeleton?.start?.();
     const ok = await App.syncAll({ notifyNewReceipts: false });
     if (ok) {
       window.App?.truthDetectChanges?.();
       render();
     }
+    App.skeleton?.stop?.();
   });
 
   els.btnExportPayments?.addEventListener("click", () => App.exportPaymentsPdf?.());
@@ -266,11 +254,15 @@ document.addEventListener("DOMContentLoaded", () => {
   window.Animations?.animateIntro?.();
 
   // ── Boot ──────────────────────────────────────────────────
+  // Shell shows instantly; the receipts table shimmers while data loads.
+  App.skeleton?.start?.();
+  App.skeleton?.metaValues?.();
+  App.skeleton?.tableRows?.("#receiptsTable tbody", 10, 8);
+
   (async () => {
     try {
       const ok = await App.syncAll({ notifyNewReceipts: false });
       if (ok) window.App?.truthDetectChanges?.();
-      else if (els.loadingSub) els.loadingSub.textContent = "Couldn't reach Google Sheets — showing last saved data";
       // Recapture the seen set AFTER the first sync, so it reflects what existed
       // before this visit's fetch — receipts added since the last visit show NEW.
       seenAtLoad = App.loadSeenSet();
@@ -278,11 +270,10 @@ document.addEventListener("DOMContentLoaded", () => {
       render();
     } catch (e) {
       console.error("[receipts.js] Boot error:", e);
-      if (els.loadingSub) els.loadingSub.textContent = "Something went wrong — loading anyway";
       populateTermFilter();
       render();
     } finally {
-      hideLoading();
+      App.skeleton?.stop?.();
     }
 
     setInterval(async () => {

@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ── Session gate ─────────────────────────────────────────
   // session.js (in the <head>) already redirects to login.html when there is
   // no active session, but window.location.replace() does NOT halt this script.
-  // We bail out so that, pre-login, we never fetch data and never flash the overlay.
+  // We bail out so that, pre-login, we never fetch data.
   const SESSION_KEY = "greenshine_session_v1";
   if (sessionStorage.getItem(SESSION_KEY) !== "true") {
     return;
@@ -58,15 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
     latestReceiptsTbody: $("#latestReceiptsTable tbody"),
     defaultersTbody:     $("#defaultersTable tbody"),
     paymentsTbody:       $("#paymentsTable tbody"),
-
-    loadingOverlay:   byId("loadingOverlay"),
-    loadingSub:       byId("loadingSub"),
   };
-
-  // ── Reveal the loading overlay now that the session is confirmed ──
-  if (els.loadingOverlay) {
-    els.loadingOverlay.classList.remove("loading-overlay--pending");
-  }
 
   function money(n) {
     return App.money ? App.money(n) : Number(n || 0).toLocaleString();
@@ -89,14 +81,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Viewing badge ────────────────────────────────────────
   function updateTermBadge() {
-    if (!els.currentTermBadge) return;
+    // Re-resolve in case the element was replaced (e.g. by a loading state).
+    let badge = byId("currentTermBadge");
+    if (!badge) {
+      const cell = $(".meta-strip .meta-value:last-child") ||
+                   document.querySelector(".meta-value");
+      if (!cell) return;
+      cell.innerHTML = `<span class="badge" id="currentTermBadge">TERM ${CURRENT_TERM}</span>`;
+      badge = byId("currentTermBadge");
+      els.currentTermBadge = badge;
+    }
+
     const { grade, term, year } = currentFilters();
     const parts = [];
     if (term  !== null) parts.push(`Term ${term}`);
     else                parts.push("ALL TERMS");
     if (year  !== null) parts.push(String(year));
     if (grade !== null) parts.push(`Grade ${grade}`);
-    els.currentTermBadge.textContent = parts.join(" • ");
+    badge.textContent = parts.join(" • ");
   }
 
   // ── Filters ──────────────────────────────────────────────
@@ -330,21 +332,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.refreshDashboard = refreshAll;
 
-  // ── Loading overlay helper ───────────────────────────────
-  function hideLoading() {
-    if (!els.loadingOverlay) return;
-    els.loadingOverlay.classList.add("hidden");
-    setTimeout(() => els.loadingOverlay.remove(), 500);
-  }
-
   // ── Listeners ────────────────────────────────────────────
   els.btnSyncNow?.addEventListener("click", async () => {
+    App.skeleton?.start?.();
     const ok = await App.syncAll({ notifyNewReceipts: true });
     if (ok) {
       window.App?.truthDetectChanges?.();
       if (els.lastSync) els.lastSync.textContent = App.nowStr?.() || new Date().toLocaleString();
       refreshAll();
     }
+    App.skeleton?.stop?.();
   });
 
   els.btnExportPayments?.addEventListener("click", () => App.exportPaymentsPdf?.());
@@ -380,22 +377,27 @@ document.addEventListener("DOMContentLoaded", () => {
   window.Animations?.animateIntro?.();
 
   // ── Boot ──────────────────────────────────────────────────
+  // Show the shell immediately, paint shimmer placeholders in the content
+  // area, then fetch. When the first sync finishes, refreshAll() replaces
+  // the shimmer with real data.
+  App.skeleton?.start?.();
+  App.skeleton?.metaValues?.();
+  App.skeleton?.tableRows?.("#defaultersTable tbody", 7, 6);
+  App.skeleton?.tableRows?.("#latestReceiptsTable tbody", 8, 6);
+
   (async () => {
     try {
       const ok = await App.syncAll({ notifyNewReceipts: false });
       if (ok) {
         window.App?.truthDetectChanges?.();
         if (els.lastSync) els.lastSync.textContent = App.nowStr?.() || new Date().toLocaleString();
-      } else if (els.loadingSub) {
-        els.loadingSub.textContent = "Couldn't reach Google Sheets — showing last saved data";
       }
       refreshAll();
     } catch (e) {
       console.error("[dashboard.js] Boot error:", e);
-      if (els.loadingSub) els.loadingSub.textContent = "Something went wrong — loading anyway";
       refreshAll();
     } finally {
-      hideLoading();
+      App.skeleton?.stop?.();
     }
 
     setInterval(async () => {

@@ -124,12 +124,16 @@ body {
 
 .sidebar-link.is-active .sidebar-ico { color: var(--green2); }
 
+/* While a sync is loading, keep the active label bright. */
+.sidebar-link.is-loading { color: var(--text); }
+
 .sidebar-ico {
   display: inline-flex;
   width: 20px;
   height: 20px;
   flex-shrink: 0;
   color: inherit;
+  position: relative;
 }
 
 .sidebar-ico svg { width: 100%; height: 100%; }
@@ -698,78 +702,78 @@ select option {
   border-top: 1px solid rgba(255,255,255,.06);
 }
 
-/* ── Loading overlay ─────────────────────────────────── */
-.loading-overlay {
-  position: fixed;
+/* ── In-page loading (skeleton shimmer) ──────────────── */
+/* Replaces the old full-screen .loading-overlay. The page shell
+   (sidebar, topbar, layout) stays visible and usable; only the
+   content placeholders shimmer while the first sync runs. */
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  background: rgba(255,255,255,.05);
+  border-radius: 8px;
+  vertical-align: middle;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
   inset: 0;
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background:
-    radial-gradient(700px 400px at 50% 30%, rgba(29,185,84,.14), transparent 60%),
-    radial-gradient(600px 400px at 50% 90%, rgba(139,90,43,.12), transparent 60%),
-    linear-gradient(180deg, #06080f, #05060a);
-  opacity: 1;
-  transition: opacity .45s ease;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,.09),
+    transparent
+  );
+  animation: sk-sweep 1.4s ease-in-out infinite;
 }
 
-.loading-overlay--pending {
-  opacity: 0;
-  pointer-events: none;
+@keyframes sk-sweep {
+  100% { transform: translateX(100%); }
 }
 
-.loading-overlay.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
+/* Shimmer rows in a table keep the row height steady */
+.table tbody tr.sk-row td { padding: 13px; }
+.table tbody tr.sk-row .skeleton { height: 13px; }
 
-.loading-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  text-align: center;
-  padding: 0 24px;
-}
+/* Meta / KPI number placeholders */
+.meta-value .skeleton,
+.kpi-value  .skeleton { height: 22px; }
 
-.loading-logo {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background:
-    linear-gradient(135deg, rgba(29,185,84,.95), rgba(255,255,255,.35)),
-    radial-gradient(24px 24px at 30% 35%, rgba(255,255,255,.55), transparent 60%),
-    radial-gradient(30px 30px at 70% 70%, rgba(139,90,43,.45), transparent 60%);
-  box-shadow: 0 8px 24px rgba(0,0,0,.40);
-  border: 1px solid rgba(255,255,255,.18);
-}
-
-.loading-spinner {
-  width: 38px;
-  height: 38px;
+/* Small spinner shown inside the active sidebar icon while loading */
+.nav-spin {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
-  border: 3px solid rgba(255,255,255,.12);
+  border: 2px solid rgba(45,224,112,.25);
   border-top-color: var(--green2);
-  animation: loadingSpin .8s linear infinite;
+  animation: nav-rot .7s linear infinite;
 }
 
-@keyframes loadingSpin {
-  to { transform: rotate(360deg); }
+@keyframes nav-rot { to { transform: rotate(360deg); } }
+
+/* Status-pill dot pulses while a sync is in flight */
+.status-pill .dot.loading {
+  animation: dot-loading 1s ease-in-out infinite;
 }
 
-.loading-text {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: .3px;
+@keyframes dot-loading {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .35; }
 }
 
-.loading-sub {
-  margin: 0;
-  font-size: 12px;
-  color: var(--muted);
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after,
+  .nav-spin,
+  .status-pill .dot.loading {
+    animation: none;
+  }
 }
 
 /* ── Helpers ─────────────────────────────────────────── */

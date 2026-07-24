@@ -12,16 +12,6 @@
 <body>
   <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- ── Loading overlay (revealed only after session confirmed) ── -->
-  <div id="loadingOverlay" class="loading-overlay loading-overlay--pending">
-    <div class="loading-box">
-      <div class="loading-logo" aria-hidden="true"></div>
-      <div class="loading-spinner" aria-hidden="true"></div>
-      <p class="loading-text">Loading students…</p>
-      <p class="loading-sub" id="loadingSub">Loading from Google Sheets</p>
-    </div>
-  </div>
-
   <div class="app-shell">
 
     <!-- ── Sidebar (rendered by sidebar.js) ─────────────── -->
@@ -205,6 +195,7 @@
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 
   <script src="sidebar.js"></script>
+  <script src="skeleton.js"></script>
   <script src="animations.js"></script>
   <script src="data.js"></script>
   <script src="truth.js"></script>
